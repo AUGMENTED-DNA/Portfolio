@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio</title>
+  <script>
+    (function(){var t=localStorage.getItem('portfolio-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <svg class="logo-svg" width="24" height="24" viewBox="0 0 26 26" fill="none">
+          <rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="#1d4ed8"/>
+          <rect x="15" y="0"  width="11" height="11" rx="1.5" fill="#2563eb"/>
+          <rect x="0"  y="15" width="11" height="11" rx="1.5" fill="#2563eb"/>
+          <rect x="15" y="15" width="11" height="11" rx="1.5" fill="#60a5fa"/>
+        </svg>
+        <div>
+          <span class="logo-title">PORTFOLIO</span>
+          <span class="logo-version" id="appVersion">v1.1</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle light/dark mode">
+          THEME
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div class="projects-grid" id="projectsContainer">
+        <!-- Projects will be loaded here -->
+      </div>
+    </main>
+  </div>
+
+  <template id="projectCard">
+    <div class="project-card">
+      <div class="project-header">
+        <h2 class="project-name"></h2>
+        <span class="project-description"></span>
+      </div>
+      <div class="project-stats">
+        <div class="stat">
+          <span class="stat-label">Changelog</span>
+          <span class="stat-value"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Backlog</span>
+          <span class="stat-value"></span>
+        </div>
+      </div>
+      <button class="view-btn">View Project →</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

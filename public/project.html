@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Details</title>
+  <script>
+    (function(){var t=localStorage.getItem('portfolio-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <svg class="logo-svg" width="24" height="24" viewBox="0 0 26 26" fill="none">
+          <rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="#1d4ed8"/>
+          <rect x="15" y="0"  width="11" height="11" rx="1.5" fill="#2563eb"/>
+          <rect x="0"  y="15" width="11" height="11" rx="1.5" fill="#2563eb"/>
+          <rect x="15" y="15" width="11" height="11" rx="1.5" fill="#60a5fa"/>
+        </svg>
+        <div>
+          <span class="logo-title"><a href="index.html" style="text-decoration: none; color: inherit;">PORTFOLIO</a></span>
+          <span class="logo-version" id="appVersion">v1.1</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle light/dark mode">
+          THEME
+        </button>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="changelog">CHANGELOG</button>
+      <button class="tab-btn" data-tab="backlog">BACKLOG</button>
+    </div>
+
+    <!-- Content -->
+    <main class="main project-detail">
+      <!-- Project Title -->
+      <div style="padding: 0 24px 16px 24px; border-bottom: 1px solid var(--border-dim); margin-bottom: 16px;">
+        <h1 id="projectTitle" style="font-size: 16px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-bright); margin: 0;">Project Name</h1>
+      </div>
+
+      <!-- Changelog Tab -->
+      <div id="changelog" class="tab-content active">
+        <div class="changelog-list" id="changelogList">
+          <!-- Changelog items will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Backlog Tab -->
+      <div id="backlog" class="tab-content">
+        <div class="backlog-controls">
+          <div class="add-item-form">
+            <input type="text" id="newBacklogItem" placeholder="Add backlog item...">
+            <button id="addBacklogBtn">ADD</button>
+          </div>
+        </div>
+        <div class="backlog-list" id="backlogList">
+          <!-- Backlog items will be loaded here -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <template id="changelogItem">
+    <div class="changelog-item">
+      <div class="item-header">
+        <h3 class="item-title"></h3>
+      </div>
+      <div class="item-dates">
+        <span class="date">
+          <strong>Inserted:</strong> <span class="date-value inserted"></span>
+        </span>
+        <span class="date">
+          <strong>Completed:</strong> <span class="date-value completed"></span>
+        </span>
+      </div>
+    </div>
+  </template>
+
+  <template id="backlogItem">
+    <div class="backlog-item">
+      <div class="item-content">
+        <input type="checkbox" class="item-checkbox">
+        <span class="item-title"></span>
+      </div>
+      <button class="delete-btn">Delete</button>
+    </div>
+  </template>
+
+  <script src="project.js"></script>
+</body>
+</html>
