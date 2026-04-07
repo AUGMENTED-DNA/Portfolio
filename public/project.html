@@ -13,7 +13,7 @@
   <div class="app">
     <!-- Header -->
     <header class="header">
-      <div class="header-left">
+      <a href="index.html" class="header-left" style="text-decoration: none; color: inherit; cursor: pointer;">
         <svg class="logo-svg" width="24" height="24" viewBox="0 0 26 26" fill="none">
           <rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="#1d4ed8"/>
           <rect x="15" y="0"  width="11" height="11" rx="1.5" fill="#2563eb"/>
@@ -21,10 +21,10 @@
           <rect x="15" y="15" width="11" height="11" rx="1.5" fill="#60a5fa"/>
         </svg>
         <div>
-          <span class="logo-title"><a href="index.html" style="text-decoration: none; color: inherit;">PORTFOLIO</a></span>
+          <span class="logo-title">PORTFOLIO</span>
           <span class="logo-version" id="appVersion">v1.2</span>
         </div>
-      </div>
+      </a>
 
       <div class="header-right">
         <button id="themeToggle" class="theme-toggle" aria-label="Toggle light/dark mode">
@@ -55,14 +55,53 @@
 
       <!-- Backlog Tab -->
       <div id="backlog" class="tab-content">
+        <!-- Add Form -->
         <div class="backlog-controls">
-          <div class="add-item-form">
-            <input type="text" id="newBacklogItem" placeholder="Add backlog item...">
-            <button id="addBacklogBtn">ADD</button>
+          <div class="backlog-add-form" id="backlogAddForm">
+            <div class="form-row">
+              <label>Title</label>
+              <input type="text" id="blTitle" placeholder="Short title for this item">
+            </div>
+            <div class="form-row">
+              <label>Summary</label>
+              <input type="text" id="blSummary" placeholder="One-line synopsis">
+            </div>
+            <div class="form-row">
+              <label>Description</label>
+              <textarea id="blDescription" rows="3" placeholder="Detailed description (up to 3 lines)"></textarea>
+            </div>
+            <div class="form-actions">
+              <button id="addBacklogBtn" class="btn-primary">ADD</button>
+              <button id="clearBacklogBtn" class="btn-secondary">CLEAR</button>
+            </div>
           </div>
         </div>
-        <div class="backlog-list" id="backlogList">
-          <!-- Backlog items will be loaded here -->
+        <div class="backlog-list" id="backlogList"></div>
+      </div>
+
+      <!-- Edit Overlay Form -->
+      <div id="editOverlay" class="edit-overlay hidden">
+        <div class="edit-box">
+          <div class="edit-box-header">
+            <span>EDIT BACKLOG ITEM</span>
+            <button id="editCancelBtn" class="btn-secondary">✕</button>
+          </div>
+          <div class="form-row">
+            <label>Title</label>
+            <input type="text" id="editTitle" placeholder="Title">
+          </div>
+          <div class="form-row">
+            <label>Summary</label>
+            <input type="text" id="editSummary" placeholder="One-line synopsis">
+          </div>
+          <div class="form-row">
+            <label>Description</label>
+            <textarea id="editDescription" rows="3" placeholder="Detailed description"></textarea>
+          </div>
+          <div class="form-actions">
+            <button id="editSaveBtn" class="btn-primary">SAVE</button>
+            <button id="editCancelBtn2" class="btn-secondary">CANCEL</button>
+          </div>
         </div>
       </div>
     </main>
@@ -86,11 +125,18 @@
 
   <template id="backlogItem">
     <div class="backlog-item">
-      <div class="item-content">
-        <input type="checkbox" class="item-checkbox">
-        <span class="item-title"></span>
+      <div class="backlog-item-body">
+        <div class="backlog-item-title-row">
+          <input type="checkbox" class="item-checkbox">
+          <span class="bl-title"></span>
+        </div>
+        <div class="bl-summary"></div>
+        <div class="bl-description"></div>
       </div>
-      <button class="delete-btn">Delete</button>
+      <div class="backlog-item-actions">
+        <button class="btn-edit">EDIT</button>
+        <button class="btn-delete">DELETE</button>
+      </div>
     </div>
   </template>
 

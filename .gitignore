@@ -1,0 +1,7 @@
+node_modules/
+.claude/
+data.json
+.browser-sessions/
+about.html
+backlog.html
+changelog.html

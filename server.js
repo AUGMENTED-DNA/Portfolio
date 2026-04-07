@@ -68,7 +68,9 @@ app.post('/api/projects/:id/backlog', (req, res) => {
 
     const newItem = {
       id: 'bl-' + Date.now(),
-      title: req.body.title,
+      title: req.body.title || '',
+      summary: req.body.summary || '',
+      description: req.body.description || '',
       status: 'pending'
     };
     project.backlog.push(newItem);
@@ -110,8 +112,10 @@ app.patch('/api/projects/:id/backlog/:itemId', (req, res) => {
       return res.status(404).json({ error: 'Backlog item not found' });
     }
 
-    if (req.body.title) item.title = req.body.title;
-    if (req.body.status) item.status = req.body.status;
+    if (req.body.title !== undefined) item.title = req.body.title;
+    if (req.body.summary !== undefined) item.summary = req.body.summary;
+    if (req.body.description !== undefined) item.description = req.body.description;
+    if (req.body.status !== undefined) item.status = req.body.status;
 
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
     res.json(item);

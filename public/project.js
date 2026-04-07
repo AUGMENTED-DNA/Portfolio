@@ -15,20 +15,16 @@ function getProjectId() {
   return params.get('id');
 }
 
-// Load project data
 let currentProject = null;
+let editingItemId = null;
 
 async function loadProject() {
   const projectId = getProjectId();
-  if (!projectId) {
-    window.location.href = 'index.html';
-    return;
-  }
+  if (!projectId) { window.location.href = 'index.html'; return; }
 
   try {
     const response = await fetch(`/api/projects/${projectId}`);
     currentProject = await response.json();
-
     document.getElementById('projectTitle').textContent = currentProject.name;
     renderChangelog();
     renderBacklog();
@@ -38,24 +34,21 @@ async function loadProject() {
   }
 }
 
-// Render changelog
+// ── CHANGELOG ─────────────────────────────────────────────────────────────
 function renderChangelog() {
   const list = document.getElementById('changelogList');
   list.innerHTML = '';
-
   currentProject.changelog.forEach(item => {
     const template = document.getElementById('changelogItem');
     const clone = template.content.cloneNode(true);
-
     clone.querySelector('.item-title').textContent = item.title;
     clone.querySelector('.date-value.inserted').textContent = item.dateInserted;
     clone.querySelector('.date-value.completed').textContent = item.dateCompleted;
-
     list.appendChild(clone);
   });
 }
 
-// Render backlog
+// ── BACKLOG RENDER ─────────────────────────────────────────────────────────
 function renderBacklog() {
   const list = document.getElementById('backlogList');
   list.innerHTML = '';
@@ -63,88 +56,136 @@ function renderBacklog() {
   currentProject.backlog.forEach(item => {
     const template = document.getElementById('backlogItem');
     const clone = template.content.cloneNode(true);
+    const el = clone.querySelector('.backlog-item');
 
-    clone.querySelector('.item-title').textContent = item.title;
+    clone.querySelector('.bl-title').textContent = item.title || '';
+    clone.querySelector('.bl-summary').textContent = item.summary || '';
+    clone.querySelector('.bl-description').textContent = item.description || '';
+
+    if (!item.summary) clone.querySelector('.bl-summary').style.display = 'none';
+    if (!item.description) clone.querySelector('.bl-description').style.display = 'none';
 
     const checkbox = clone.querySelector('.item-checkbox');
     checkbox.checked = item.status === 'done';
-
-    const deleteBtn = clone.querySelector('.delete-btn');
-    deleteBtn.addEventListener('click', () => deleteBacklogItem(item.id));
+    if (item.status === 'done') clone.querySelector('.backlog-item').classList.add('done');
 
     checkbox.addEventListener('change', (e) => {
-      updateBacklogItem(item.id, { status: e.target.checked ? 'done' : 'pending' });
+      const status = e.target.checked ? 'done' : 'pending';
+      updateBacklogItem(item.id, { status });
+      const row = e.target.closest('.backlog-item');
+      row.classList.toggle('done', e.target.checked);
     });
+
+    clone.querySelector('.btn-edit').addEventListener('click', () => openEdit(item));
+    clone.querySelector('.btn-delete').addEventListener('click', () => confirmDelete(item.id, item.title));
 
     list.appendChild(clone);
   });
 }
 
-// Tab switching
-const tabButtons = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.tab-content');
-
-tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tabName = btn.dataset.tab;
-
-    tabButtons.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(t => t.classList.remove('active'));
-
-    btn.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
-  });
-});
-
-// Add backlog item
+// ── ADD ITEM ───────────────────────────────────────────────────────────────
 document.getElementById('addBacklogBtn').addEventListener('click', async () => {
-  const input = document.getElementById('newBacklogItem');
-  const title = input.value.trim();
+  const title = document.getElementById('blTitle').value.trim();
+  const summary = document.getElementById('blSummary').value.trim();
+  const description = document.getElementById('blDescription').value.trim();
 
-  if (!title) return;
+  if (!title) { document.getElementById('blTitle').focus(); return; }
 
   try {
     const response = await fetch(`/api/projects/${currentProject.id}/backlog`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
+      body: JSON.stringify({ title, summary, description })
     });
-
     const newItem = await response.json();
     currentProject.backlog.push(newItem);
-    input.value = '';
+    document.getElementById('blTitle').value = '';
+    document.getElementById('blSummary').value = '';
+    document.getElementById('blDescription').value = '';
     renderBacklog();
   } catch (err) {
     console.error('Failed to add backlog item:', err);
   }
 });
 
-// Delete backlog item
+document.getElementById('clearBacklogBtn').addEventListener('click', () => {
+  document.getElementById('blTitle').value = '';
+  document.getElementById('blSummary').value = '';
+  document.getElementById('blDescription').value = '';
+});
+
+// ── EDIT ITEM ──────────────────────────────────────────────────────────────
+function openEdit(item) {
+  editingItemId = item.id;
+  document.getElementById('editTitle').value = item.title || '';
+  document.getElementById('editSummary').value = item.summary || '';
+  document.getElementById('editDescription').value = item.description || '';
+  document.getElementById('editOverlay').classList.remove('hidden');
+}
+
+function closeEdit() {
+  editingItemId = null;
+  document.getElementById('editOverlay').classList.add('hidden');
+}
+
+document.getElementById('editSaveBtn').addEventListener('click', async () => {
+  if (!editingItemId) return;
+  const title = document.getElementById('editTitle').value.trim();
+  const summary = document.getElementById('editSummary').value.trim();
+  const description = document.getElementById('editDescription').value.trim();
+
+  try {
+    await updateBacklogItem(editingItemId, { title, summary, description });
+    const item = currentProject.backlog.find(b => b.id === editingItemId);
+    if (item) { item.title = title; item.summary = summary; item.description = description; }
+    closeEdit();
+    renderBacklog();
+  } catch (err) {
+    console.error('Failed to save backlog item:', err);
+  }
+});
+
+document.getElementById('editCancelBtn').addEventListener('click', closeEdit);
+document.getElementById('editCancelBtn2').addEventListener('click', closeEdit);
+document.getElementById('editOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('editOverlay')) closeEdit();
+});
+
+// ── DELETE ITEM ────────────────────────────────────────────────────────────
+function confirmDelete(itemId, title) {
+  if (!confirm(`Delete backlog item: "${title}"?`)) return;
+  deleteBacklogItem(itemId);
+}
+
 async function deleteBacklogItem(itemId) {
   try {
-    await fetch(`/api/projects/${currentProject.id}/backlog/${itemId}`, {
-      method: 'DELETE'
-    });
-
-    currentProject.backlog = currentProject.backlog.filter(item => item.id !== itemId);
+    await fetch(`/api/projects/${currentProject.id}/backlog/${itemId}`, { method: 'DELETE' });
+    currentProject.backlog = currentProject.backlog.filter(b => b.id !== itemId);
     renderBacklog();
   } catch (err) {
     console.error('Failed to delete backlog item:', err);
   }
 }
 
-// Update backlog item
+// ── UPDATE ITEM ────────────────────────────────────────────────────────────
 async function updateBacklogItem(itemId, updates) {
-  try {
-    await fetch(`/api/projects/${currentProject.id}/backlog/${itemId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
-    });
-  } catch (err) {
-    console.error('Failed to update backlog item:', err);
-  }
+  await fetch(`/api/projects/${currentProject.id}/backlog/${itemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  });
 }
 
-// Initialize
+// ── TABS ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tabName = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+  });
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────────
 loadProject();
