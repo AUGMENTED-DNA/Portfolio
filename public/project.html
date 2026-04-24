@@ -11,9 +11,10 @@
 </head>
 <body>
   <div class="app">
-    <!-- Header -->
-    <header class="header">
-      <a href="index.html" class="header-left" style="text-decoration: none; color: inherit; cursor: pointer;">
+
+    <!-- Rich header -->
+    <header class="app-header">
+      <a href="index.html" class="hdr-logo-link">
         <svg class="logo-svg" width="24" height="24" viewBox="0 0 26 26" fill="none">
           <rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="#1d4ed8"/>
           <rect x="15" y="0"  width="11" height="11" rx="1.5" fill="#2563eb"/>
@@ -21,124 +22,99 @@
           <rect x="15" y="15" width="11" height="11" rx="1.5" fill="#60a5fa"/>
         </svg>
         <div>
-          <span class="logo-title">PORTFOLIO</span>
-          <span class="logo-version" id="appVersion">v1.2</span>
+          <span class="hdr-logo-title">PORTFOLIO</span>
+          <span class="hdr-logo-sub">&#8592; Back to projects</span>
         </div>
       </a>
-
-      <div class="header-right">
-        <button id="themeToggle" class="theme-toggle" aria-label="Toggle light/dark mode">
-          THEME
-        </button>
+      <span class="hdr-sep">/</span>
+      <div class="hdr-proj">
+        <span class="hdr-proj-name" id="projName">&#8212;</span>
+        <span class="hdr-proj-ver" id="projVer" style="display:none"></span>
+        <span class="hdr-proj-desc" id="projDesc"></span>
+      </div>
+      <div class="hdr-right">
+        <div class="hdr-divider"></div>
+        <div class="hdr-stats">
+          <div class="hdr-stat"><span class="hdr-stat-n" id="statChangelog">0</span><span class="hdr-stat-l">CL</span></div>
+          <div class="hdr-stat"><span class="hdr-stat-n" id="statBacklog">0</span><span class="hdr-stat-l">BL</span></div>
+          <div class="hdr-stat"><span class="hdr-stat-n" id="statObjectives">0</span><span class="hdr-stat-l">OBJ</span></div>
+        </div>
+        <div class="hdr-divider"></div>
+        <a class="hbtn-gh" id="ghLink" href="#" target="_blank" style="display:none">&#8599; GH</a>
+        <button id="themeToggle" class="hbtn-ghost">THEME</button>
       </div>
     </header>
 
     <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="changelog">CHANGELOG</button>
-      <button class="tab-btn" data-tab="backlog">BACKLOG</button>
+    <div class="pj-tabs-bar">
+      <button class="pj-tab-btn active" data-tab="info">INFO</button>
+      <button class="pj-tab-btn" data-tab="objective">OBJECTIVE</button>
+      <button class="pj-tab-btn" data-tab="changelog">CHANGELOG</button>
+      <button class="pj-tab-btn" data-tab="backlog">BACKLOG</button>
     </div>
 
     <!-- Content -->
-    <main class="main project-detail">
-      <!-- Project Title -->
-      <div style="padding: 0 24px 16px 24px; border-bottom: 1px solid var(--border-dim); margin-bottom: 16px;">
-        <h1 id="projectTitle" style="font-size: 16px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-bright); margin: 0;">Project Name</h1>
-      </div>
-
-      <!-- Changelog Tab -->
-      <div id="changelog" class="tab-content active">
-        <div class="changelog-list" id="changelogList">
-          <!-- Changelog items will be loaded here -->
-        </div>
-      </div>
-
-      <!-- Backlog Tab -->
-      <div id="backlog" class="tab-content">
+    <main class="pj-content">
+      <div id="tab-info"      class="pj-tab active"></div>
+      <div id="tab-objective" class="pj-tab"></div>
+      <div id="tab-changelog" class="pj-tab"></div>
+      <div id="tab-backlog"   class="pj-tab">
         <!-- Add Form -->
-        <div class="backlog-controls">
-          <div class="backlog-add-form" id="backlogAddForm">
-            <div class="form-row">
-              <label>Title</label>
-              <input type="text" id="blTitle" placeholder="Short title for this item">
-            </div>
-            <div class="form-row">
-              <label>Summary</label>
-              <input type="text" id="blSummary" placeholder="One-line synopsis">
-            </div>
-            <div class="form-row">
-              <label>Description</label>
-              <textarea id="blDescription" rows="3" placeholder="Detailed description (up to 3 lines)"></textarea>
-            </div>
-            <div class="form-actions">
-              <button id="addBacklogBtn" class="btn-primary">ADD</button>
-              <button id="clearBacklogBtn" class="btn-secondary">CLEAR</button>
-            </div>
-          </div>
-        </div>
-        <div class="backlog-list" id="backlogList"></div>
-      </div>
-
-      <!-- Edit Overlay Form -->
-      <div id="editOverlay" class="edit-overlay hidden">
-        <div class="edit-box">
-          <div class="edit-box-header">
-            <span>EDIT BACKLOG ITEM</span>
-            <button id="editCancelBtn" class="btn-secondary">✕</button>
-          </div>
-          <div class="form-row">
+        <div class="pj-add-form">
+          <div class="pj-form-row">
             <label>Title</label>
-            <input type="text" id="editTitle" placeholder="Title">
+            <input type="text" id="blTitle" placeholder="Short title for this item">
           </div>
-          <div class="form-row">
+          <div class="pj-form-row">
             <label>Summary</label>
-            <input type="text" id="editSummary" placeholder="One-line synopsis">
+            <input type="text" id="blSummary" placeholder="One-line synopsis">
           </div>
-          <div class="form-row">
+          <div class="pj-form-row">
             <label>Description</label>
-            <textarea id="editDescription" rows="3" placeholder="Detailed description"></textarea>
+            <textarea id="blDescription" rows="2" placeholder="Detailed description"></textarea>
           </div>
-          <div class="form-actions">
-            <button id="editSaveBtn" class="btn-primary">SAVE</button>
-            <button id="editCancelBtn2" class="btn-secondary">CANCEL</button>
+          <div class="pj-form-actions">
+            <button id="addBacklogBtn" class="btn-primary">ADD</button>
+            <button id="clearBacklogBtn" class="btn-secondary">CLEAR</button>
           </div>
         </div>
+        <div id="backlogList"></div>
       </div>
     </main>
   </div>
 
-  <template id="changelogItem">
-    <div class="changelog-item">
-      <div class="item-header">
-        <h3 class="item-title"></h3>
-      </div>
-      <div class="item-dates">
-        <span class="date">
-          <strong>Inserted:</strong> <span class="date-value inserted"></span>
-        </span>
-        <span class="date">
-          <strong>Completed:</strong> <span class="date-value completed"></span>
-        </span>
-      </div>
-    </div>
-  </template>
+  <!-- Floating tooltip -->
+  <div id="tt" class="pj-tooltip" style="display:none">
+    <div class="pj-tt-title" id="ttTitle"></div>
+    <div class="pj-tt-body"  id="ttBody"></div>
+    <div class="pj-tt-footer" id="ttFooter" style="display:none"></div>
+  </div>
 
-  <template id="backlogItem">
-    <div class="backlog-item">
-      <div class="backlog-item-body">
-        <div class="backlog-item-title-row">
-          <input type="checkbox" class="item-checkbox">
-          <span class="bl-title"></span>
-        </div>
-        <div class="bl-summary"></div>
-        <div class="bl-description"></div>
+  <!-- Edit overlay -->
+  <div id="editOverlay" class="edit-overlay hidden">
+    <div class="edit-box">
+      <div class="edit-box-header">
+        <span>EDIT BACKLOG ITEM</span>
+        <button id="editCancelBtn" class="btn-secondary">&#10005;</button>
       </div>
-      <div class="backlog-item-actions">
-        <button class="btn-edit">EDIT</button>
-        <button class="btn-delete">DELETE</button>
+      <div class="form-row">
+        <label>Title</label>
+        <input type="text" id="editTitle" placeholder="Title">
+      </div>
+      <div class="form-row">
+        <label>Summary</label>
+        <input type="text" id="editSummary" placeholder="One-line synopsis">
+      </div>
+      <div class="form-row">
+        <label>Description</label>
+        <textarea id="editDescription" rows="3" placeholder="Detailed description"></textarea>
+      </div>
+      <div class="form-actions">
+        <button id="editSaveBtn" class="btn-primary">SAVE</button>
+        <button id="editCancelBtn2" class="btn-secondary">CANCEL</button>
       </div>
     </div>
-  </template>
+  </div>
 
   <script src="project.js"></script>
 </body>
