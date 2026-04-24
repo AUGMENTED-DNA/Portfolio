@@ -6,3 +6,5 @@ about.html
 backlog.html
 changelog.html
 package-lock.json
+.env
+options/strategies/
