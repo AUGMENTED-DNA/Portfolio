@@ -1,23 +1,10 @@
 # Portfolio
 
-Personal portfolio website with Node.js server and dynamic content generation.
+Personal portfolio website — new effort starts here at root.
 
-## Tech
-- Language: Node.js
-- Port: 3000
-- Entry: `server.js`
-
-## Start
-```bash
-node server.js              # web server at http://localhost:3000
-```
-
-## Key Files
-- `server.js` — Node.js HTTP server
-- `public/` — static assets
-- `data.json` — portfolio data
-- `.env` — Gemini API key (see .env.example)
+## Archived
+- Prior Node.js app (v1.0–v1.5) is in `v1/`
+- Run it: `cd v1 && node server.js` (port 3000)
 
 ## Notes
-- v0.0
-- Uses Gemini API for dynamic content generation
+- v1.6
