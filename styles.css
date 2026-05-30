@@ -2,7 +2,7 @@
 
 html, body {
   width: 100%; height: 100%;
-  background: transparent;
+  background: #0a0c14;
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, sans-serif;
   /* Prevent text selection during drag */
@@ -34,3 +34,55 @@ html, body {
   z-index: 10;
 }
 #tooltip.visible { opacity: 1; }
+
+/* ─── Design toggle bar ───────────────────────────────────────────────────── */
+#toggle-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 36px;
+  background: rgba(10,12,20,0.96);
+  border-bottom: 1px solid rgba(59,91,219,0.30);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 100;
+}
+#toggle-bar button {
+  background: rgba(20,22,40,0.9);
+  color: rgba(160,180,255,0.55);
+  border: 1px solid rgba(59,91,219,0.25);
+  padding: 4px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+#toggle-bar button.active {
+  background: rgba(59,91,219,0.75);
+  color: #fff;
+  border-color: rgba(92,124,250,0.7);
+}
+#toggle-bar button:hover:not(.active) {
+  background: rgba(40,44,80,0.9);
+  color: rgba(200,212,255,0.8);
+}
+
+/* ─── View containers ─────────────────────────────────────────────────────── */
+.view {
+  position: fixed;
+  top: 36px; left: 0; right: 0; bottom: 0;
+}
+.view.hidden { display: none; }
+
+#v1-frame {
+  width: 100%; height: 100%;
+  border: none;
+}
+
+#v18-frame {
+  width: 100%; height: 100%;
+  border: none;
+  background: #07071a;
+}

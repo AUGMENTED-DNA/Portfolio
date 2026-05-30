@@ -32,8 +32,9 @@ const tip    = document.getElementById('tooltip');
 let W, H, CX, CY, ORBIT_R, NODE_R, CENTER_R, INNER_R;
 
 function resize() {
-  W = canvas.width  = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  const cont = canvas.parentElement;
+  W = canvas.width  = (cont && cont.clientWidth)  || window.innerWidth;
+  H = canvas.height = (cont && cont.clientHeight) || window.innerHeight;
   CX = W / 2; CY = H / 2;
   const minDim = Math.min(W, H);
   ORBIT_R  = minDim * 0.37;
@@ -325,3 +326,17 @@ function frame() {
 }
 
 requestAnimationFrame(frame);
+
+// ─── Design toggle ────────────────────────────────────────────────────────────
+const VIEWS = ['v1', 'v17', 'v18'];
+document.querySelectorAll('#toggle-bar button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.target;
+    document.querySelectorAll('#toggle-bar button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    VIEWS.forEach(v => {
+      const el = document.getElementById('view-' + v);
+      if (el) el.classList.toggle('hidden', v !== target);
+    });
+  });
+});

@@ -4,13 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'">
+        content="default-src 'self' http://localhost:3001;
+                 script-src 'self';
+                 style-src 'self';
+                 frame-src 'self' http://localhost:3001">
   <link rel="stylesheet" href="styles.css">
   <title>PAI Launcher</title>
 </head>
 <body>
-  <canvas id="c"></canvas>
-  <div id="tooltip"></div>
+  <div id="toggle-bar">
+    <button id="btn-v1"  data-target="v1">v1 — Table</button>
+    <button id="btn-v17" data-target="v17" class="active">v1.7 — Orbital</button>
+    <button id="btn-v18" data-target="v18">v1.8 — Circular</button>
+  </div>
+
+  <div id="view-v17" class="view">
+    <canvas id="c"></canvas>
+    <div id="tooltip"></div>
+  </div>
+
+  <div id="view-v1" class="view hidden">
+    <iframe id="v1-frame" src="http://localhost:3001" title="v1 Portfolio"></iframe>
+  </div>
+
+  <div id="view-v18" class="view hidden">
+    <iframe id="v18-frame" src="/v18.html" title="v1.8 Circular"></iframe>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

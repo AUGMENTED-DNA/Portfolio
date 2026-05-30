@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAI Orbital</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #07071a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    /* Desktop atmosphere — subtle radial glow */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse 70% 70% at 50% 50%,
+        rgba(18,26,80,0.55) 0%, rgba(4,4,18,0.97) 68%);
+      pointer-events: none;
+    }
+    /* The circular app window */
+    #orbital-window {
+      position: relative;
+      z-index: 1;
+      --sz: min(90vw, 90vh);
+      width: var(--sz);
+      height: var(--sz);
+      border-radius: 50%;
+      overflow: hidden;
+      background: #0a0c14;
+      box-shadow:
+        0 0 0 1px rgba(59,91,219,0.18),
+        0 0 48px  rgba(59,91,219,0.22),
+        0 0 110px rgba(59,91,219,0.10),
+        inset 0 0 60px rgba(0,0,0,0.6);
+    }
+    #c {
+      display: block;
+      width: 100%; height: 100%;
+      cursor: grab;
+      -webkit-app-region: no-drag;
+    }
+    #c.dragging { cursor: grabbing; }
+    #tooltip {
+      position: fixed;
+      background: rgba(10,10,20,0.92);
+      color: #8ab4f8;
+      border: 1px solid rgba(138,180,248,0.35);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    #tooltip.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="orbital-window">
+    <canvas id="c"></canvas>
+  </div>
+  <div id="tooltip"></div>
+  <script src="app.js"></script>
+</body>
+</html>
