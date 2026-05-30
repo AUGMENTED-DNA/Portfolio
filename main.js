@@ -33,6 +33,9 @@ function createWindow() {
   ipcMain.on('set-ignore-mouse', (_e, ignore) => {
     win.setIgnoreMouseEvents(ignore, { forward: true });
   });
+
+  ipcMain.on('close-window',    () => win.close());
+  ipcMain.on('minimize-window', () => win.minimize());
 }
 
 app.whenReady().then(createWindow);

@@ -340,3 +340,16 @@ document.querySelectorAll('#toggle-bar button').forEach(btn => {
     });
   });
 });
+
+// ─── Window controls (Electron only) ─────────────────────────────────────────
+(function () {
+  const controls = document.getElementById('win-controls');
+  if (!window.electron) {
+    if (controls) controls.style.display = 'none';
+    return;
+  }
+  const btnClose   = document.getElementById('btn-close');
+  const btnMinimize = document.getElementById('btn-minimize');
+  if (btnClose)    btnClose.addEventListener('click',    () => window.electron.close());
+  if (btnMinimize) btnMinimize.addEventListener('click', () => window.electron.minimize());
+}());
