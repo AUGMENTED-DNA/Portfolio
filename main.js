@@ -24,7 +24,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile('index.html');
+  win.loadFile('v18.html');
 
   // Allow dragging the window by clicking inside the circle but outside nodes
   ipcMain.on('start-drag', () => win.webContents.executeJavaScript(''));
