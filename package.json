@@ -1,0 +1,12 @@
+{
+  "name": "pai-launcher",
+  "version": "2.0.0",
+  "description": "PAI orbital project launcher — circular Electron widget",
+  "main": "main.js",
+  "scripts": {
+    "start": "npx --yes electron .",
+    "dev":   "npx --yes electron . --dev"
+  },
+  "keywords": [],
+  "author": "Dane McNeill"
+}

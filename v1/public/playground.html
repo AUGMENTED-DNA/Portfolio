@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Page Layout Explorer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-app: #07080f; --bg-header: #050609; --bg-card: #0d1020;
+  --bg-card-hover: #101428; --bg-input: #0c0e1e;
+  --border-dim: #182040; --border-mid: #1e3060; --border-active: #2563eb;
+  --text-bright: #dbeafe; --text-primary: #91b7ee; --text-secondary: #5479af;
+  --text-muted: #2d4762; --accent: #3b82f6; --accent-bright: #60a5fa;
+  --accent-glow: rgba(59,130,246,0.25); --success: #22d3ee; --danger: #dc2626;
+  --font: 'JetBrains Mono','Fira Code','Consolas','Courier New',monospace;
+}
+html[data-theme="light"] {
+  --bg-app:#fff; --bg-header:#f8faff; --bg-card:#f1f5fb; --bg-card-hover:#e8efff;
+  --bg-input:#fff; --border-dim:#e2e4e9; --border-mid:#c8ccd8; --border-active:#2563eb;
+  --text-bright:#0d0f14; --text-primary:#1c2333; --text-secondary:#4a5568;
+  --text-muted:#8a9ab5; --accent:#2563eb; --accent-bright:#3b82f6;
+  --accent-glow:rgba(59,130,246,0.10); --success:#0891b2; --danger:#dc2626;
+}
+
+body { background:#020305; font-family:var(--font); display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+
+/* ── PLAYGROUND CHROME ── */
+.pg-bar { background:#080b18; border-bottom:2px solid #1a2040; padding:8px 18px; display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.pg-label { font-size:9px; font-weight:700; letter-spacing:.12em; color:#2d4060; text-transform:uppercase; margin-right:4px; }
+.pg-btn { background:transparent; border:1px solid #1a2040; color:#4a6888; font-family:var(--font); font-size:11px; font-weight:700; letter-spacing:.06em; padding:5px 14px; border-radius:4px; cursor:pointer; transition:all .15s; }
+.pg-btn:hover { border-color:#2563eb; color:#60a5fa; }
+.pg-btn.active { background:rgba(37,99,235,.18); border-color:#2563eb; color:#60a5fa; }
+.pg-spacer { flex:1; }
+.pg-note { font-size:10px; color:#2d4060; letter-spacing:.04em; font-style:italic; }
+.pg-theme-btn { background:rgba(37,99,235,.12); border:1px solid #1e3060; color:#60a5fa; font-family:var(--font); font-size:11px; font-weight:700; letter-spacing:.06em; padding:5px 14px; border-radius:4px; cursor:pointer; }
+
+#preview-wrapper { flex:1; overflow:hidden; background:var(--bg-app); }
+#preview-inner { width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; background:var(--bg-app); color:var(--text-primary); }
+
+.pg-prompt-bar { background:#060810; border-top:2px solid #1a2040; padding:9px 18px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.pg-prompt-label { font-size:9px; font-weight:700; letter-spacing:.12em; color:#2d4060; text-transform:uppercase; flex-shrink:0; }
+#pg-prompt-text { flex:1; font-family:var(--font); font-size:11px; color:#4a6888; line-height:1.5; }
+.pg-copy-btn { background:rgba(37,99,235,.12); border:1px solid #1e3060; color:#60a5fa; font-family:var(--font); font-size:11px; font-weight:700; letter-spacing:.06em; padding:5px 16px; border-radius:4px; cursor:pointer; flex-shrink:0; }
+
+/* ── FLOATING TOOLTIP ── */
+#tt { display:none; position:fixed; z-index:9999; max-width:360px; min-width:220px; background:var(--bg-card); border:1px solid var(--border-mid); border-radius:6px; padding:11px 14px; box-shadow:0 8px 32px rgba(0,0,0,.55); pointer-events:none; }
+#tt-title { font-size:12px; font-weight:700; color:var(--text-bright); margin-bottom:5px; }
+#tt-body { font-size:11px; color:var(--text-secondary); line-height:1.55; }
+#tt-footer { font-size:10px; color:var(--text-muted); border-top:1px solid var(--border-dim); padding-top:5px; margin-top:6px; }
+
+/* ── APP HEADER ── */
+.app-header { display:flex; align-items:center; height:52px; padding:0 20px; background:var(--bg-header); border-bottom:1px solid var(--border-dim); flex-shrink:0; }
+.hdr-logo { display:flex; align-items:center; gap:12px; flex-shrink:0; cursor:pointer; }
+.hdr-logo-title { font-size:13px; font-weight:700; letter-spacing:.15em; color:var(--text-bright); text-transform:uppercase; display:block; }
+.hdr-logo-sub { font-size:9px; color:var(--text-muted); letter-spacing:.05em; display:block; }
+.hdr-sep { color:var(--border-mid); font-size:20px; margin:0 14px; flex-shrink:0; user-select:none; line-height:1; }
+.hdr-proj { display:flex; align-items:center; gap:10px; flex:1; min-width:0; overflow:hidden; }
+.hdr-proj-name { font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); white-space:nowrap; flex-shrink:0; }
+.hdr-proj-ver { background:rgba(34,211,238,.1); border:1px solid rgba(34,211,238,.25); color:var(--success); font-size:10px; font-weight:700; letter-spacing:.05em; padding:2px 8px; border-radius:3px; flex-shrink:0; }
+.hdr-proj-desc { font-size:10px; color:var(--text-secondary); letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hdr-right { display:flex; align-items:center; gap:12px; flex-shrink:0; margin-left:14px; }
+.hdr-divider { width:1px; height:28px; background:var(--border-dim); flex-shrink:0; }
+.hdr-stats { display:flex; align-items:center; gap:16px; }
+.hdr-stat { display:flex; flex-direction:column; align-items:center; line-height:1.1; }
+.hdr-stat-n { font-size:15px; font-weight:700; color:var(--accent-bright); line-height:1; }
+/* FIX: was --text-muted (#2d4762, unreadable) — now --text-secondary (#5479af) */
+.hdr-stat-l { font-size:8px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; margin-top:1px; }
+.hbtn { background:rgba(37,99,235,.12); border:1px solid var(--border-mid); color:var(--accent-bright); font-family:var(--font); font-size:10px; font-weight:700; letter-spacing:.06em; padding:4px 12px; border-radius:4px; cursor:pointer; }
+.hbtn-ghost { background:transparent; border:1px solid var(--border-dim); color:var(--text-secondary); font-family:var(--font); font-size:10px; font-weight:700; letter-spacing:.06em; padding:4px 10px; border-radius:4px; cursor:pointer; }
+.hbtn-gh { background:transparent; border:1px solid var(--border-dim); color:var(--text-secondary); font-family:var(--font); font-size:10px; font-weight:700; letter-spacing:.06em; padding:4px 10px; border-radius:4px; cursor:pointer; text-decoration:none; }
+
+/* ── TABS ── */
+.tabs-bar { display:flex; border-bottom:1px solid var(--border-dim); padding:0 20px; flex-shrink:0; background:var(--bg-header); }
+.tab-btn { background:none; border:none; padding:10px 13px; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-secondary); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; font-family:var(--font); }
+.tab-btn.active { color:var(--accent-bright); border-bottom-color:var(--accent-bright); }
+.tab-btn:hover:not(.active) { color:var(--text-primary); }
+.content-area { flex:1; overflow-y:auto; padding:14px 20px; background:var(--bg-app); }
+
+/* ── COMPACT ROW BASE ── */
+.row-item { border-radius:4px; cursor:pointer; overflow:hidden; transition:border-color .12s, background .12s; }
+.row-compact { display:flex; align-items:center; gap:9px; padding:7px 11px; min-height:32px; }
+.row-chevron { color:var(--text-muted); font-size:14px; flex-shrink:0; transition:transform .15s; margin-left:auto; }
+.row-item.expanded .row-chevron { transform:rotate(90deg); }
+.row-expand { display:none; padding:8px 12px 10px; border-top:1px solid var(--border-dim); }
+.row-item.expanded .row-expand { display:block; }
+.row-detail { font-size:11px; color:var(--text-secondary); line-height:1.55; margin-bottom:4px; }
+.row-meta { font-size:10px; color:var(--text-muted); }
+
+/* ── CHANGELOG ── */
+.cl-list { display:flex; flex-direction:column; gap:5px; }
+.cl-item { background:var(--bg-card); border:1px solid var(--border-dim); border-left:3px solid var(--success); }
+.cl-item:hover { border-color:var(--border-mid); background:var(--bg-card-hover); }
+.cl-v { background:rgba(34,211,238,.1); border:1px solid rgba(34,211,238,.2); color:var(--success); font-size:10px; font-weight:700; letter-spacing:.05em; padding:1px 7px; border-radius:3px; flex-shrink:0; }
+.cl-title { font-size:12px; font-weight:700; color:var(--text-bright); letter-spacing:.02em; flex:1; }
+
+/* ── BACKLOG ── */
+.bl-list { display:flex; flex-direction:column; gap:5px; }
+.bl-item { background:var(--bg-card); border:1px solid var(--border-dim); border-left:3px solid var(--accent); }
+.bl-item:hover { border-color:var(--border-mid); background:var(--bg-card-hover); }
+.bl-cb { width:13px; height:13px; flex-shrink:0; accent-color:var(--accent); cursor:pointer; }
+.bl-title-row { display:flex; align-items:center; gap:7px; flex:1; min-width:0; overflow:hidden; }
+.bl-title { font-size:12px; font-weight:700; color:var(--accent-bright); white-space:nowrap; flex-shrink:0; }
+.bl-sep { color:var(--text-muted); font-size:11px; flex-shrink:0; }
+.bl-summary { font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bl-acts { display:flex; gap:5px; flex-shrink:0; margin-left:4px; }
+.btn-edit { background:transparent; border:1px solid var(--border-mid); color:var(--text-secondary); font-family:var(--font); font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 8px; border-radius:3px; cursor:pointer; }
+.btn-del { background:transparent; border:1px solid var(--danger); color:var(--danger); font-family:var(--font); font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 8px; border-radius:3px; cursor:pointer; }
+
+/* ── OBJECTIVES ── */
+.obj-list { display:flex; flex-direction:column; gap:5px; }
+.obj-item { background:var(--bg-card); border:1px solid var(--border-dim); }
+.obj-item:hover { border-color:var(--border-mid); background:var(--bg-card-hover); }
+.obj-badge { font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:1px 7px; border-radius:3px; flex-shrink:0; }
+.obj-badge.core    { background:rgba(59,130,246,.1);  border:1px solid rgba(59,130,246,.25); color:var(--accent-bright); }
+.obj-badge.planned { background:rgba(34,211,238,.08); border:1px solid rgba(34,211,238,.2);  color:var(--success); }
+.obj-badge.ongoing { background:rgba(145,183,238,.07);border:1px solid rgba(145,183,238,.2); color:var(--text-primary); }
+.obj-title { font-size:12px; font-weight:700; color:var(--text-bright); letter-spacing:.02em; flex:1; }
+
+/* ── INFO TAB ── */
+.info-doc { max-width:700px; }
+.info-doc h2 { font-size:11px; font-weight:700; color:var(--accent-bright); letter-spacing:.08em; text-transform:uppercase; padding-bottom:5px; border-bottom:1px solid var(--border-dim); margin:22px 0 10px; }
+.info-doc h2:first-child { margin-top:0; }
+.info-doc p { font-size:12px; color:var(--text-primary); line-height:1.7; margin-bottom:7px; }
+.info-doc strong { color:var(--text-bright); }
+.info-doc ul { margin:5px 0 5px 18px; }
+.info-doc li { font-size:12px; color:var(--text-primary); line-height:1.6; margin-bottom:2px; }
+.info-tbl { width:100%; border-collapse:collapse; font-size:11px; margin:8px 0; }
+.info-tbl th { text-align:left; padding:5px 10px; border-bottom:1px solid var(--border-mid); color:var(--text-muted); font-weight:700; text-transform:uppercase; font-size:9px; letter-spacing:.08em; }
+.info-tbl td { padding:6px 10px; border-bottom:1px solid var(--border-dim); color:var(--text-primary); }
+.info-tbl td code { background:var(--bg-card); border:1px solid var(--border-dim); padding:1px 5px; border-radius:3px; font-size:10px; color:var(--success); }
+.rel-cards { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+.rel-card { background:var(--bg-card); border:1px solid var(--border-dim); border-radius:4px; padding:10px 14px; flex:1; min-width:180px; }
+.rel-card-title { font-size:11px; font-weight:700; color:var(--accent-bright); margin-bottom:3px; }
+.rel-card-desc { font-size:11px; color:var(--text-secondary); line-height:1.5; }
+
+/* ── SPLIT PANEL ── */
+.split-wrap { display:flex; flex:1; overflow:hidden; }
+.split-left { width:268px; flex-shrink:0; background:var(--bg-card); border-right:1px solid var(--border-dim); overflow-y:auto; padding:15px 14px; display:flex; flex-direction:column; gap:15px; }
+.split-right { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.sp-sec { font-size:9px; font-weight:700; color:var(--text-muted); letter-spacing:.1em; text-transform:uppercase; padding-bottom:5px; border-bottom:1px solid var(--border-dim); margin-bottom:7px; }
+.sp-meta { display:flex; flex-direction:column; gap:4px; }
+.sp-row { display:flex; align-items:center; justify-content:space-between; }
+.sp-key { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
+.sp-val { font-size:11px; color:var(--text-primary); }
+.sp-tl { display:flex; flex-direction:column; gap:4px; }
+.sp-tl-item { display:flex; align-items:center; gap:6px; }
+.sp-dot { width:5px; height:5px; border-radius:50%; background:var(--success); flex-shrink:0; }
+.sp-tl-v { font-size:10px; font-weight:700; color:var(--success); width:30px; flex-shrink:0; }
+.sp-tl-t { font-size:10px; color:var(--text-secondary); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sp-tl-d { font-size:9px; color:var(--text-muted); flex-shrink:0; }
+.sp-rel { display:flex; flex-direction:column; }
+.sp-rel-link { font-size:11px; color:var(--accent-bright); cursor:pointer; padding:4px 0; border-bottom:1px solid var(--border-dim); }
+.sp-rel-link:last-child { border-bottom:none; }
+</style>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+<div class="pg-bar">
+  <span class="pg-label">Layout</span>
+  <button class="pg-btn active" id="btn-a" onclick="setLayout('A')">A — TABS ONLY</button>
+  <button class="pg-btn" id="btn-b" onclick="setLayout('B')">B — WITH INFO TAB</button>
+  <button class="pg-btn" id="btn-c" onclick="setLayout('C')">C — SPLIT PANEL</button>
+  <div class="pg-spacer"></div>
+  <span class="pg-note">Hover items for tooltip &middot; Click to expand inline</span>
+  <button class="pg-theme-btn" onclick="toggleTheme()">THEME</button>
+</div>
+
+<div id="preview-wrapper">
+  <div id="preview-inner"></div>
+</div>
+
+<div id="tt">
+  <div id="tt-title"></div>
+  <div id="tt-body"></div>
+  <div id="tt-footer"></div>
+</div>
+
+<div class="pg-prompt-bar">
+  <span class="pg-prompt-label">Prompt</span>
+  <span id="pg-prompt-text"></span>
+  <button class="pg-copy-btn" id="pg-copy-btn" onclick="copyPrompt()">COPY</button>
+</div>
+
+<script>
+var D = {
+  proj: { name:'Spinners Editor', desc:'AI-powered spinner verb manager for Claude Code', version:'v6.8', port:'7433', lang:'TypeScript / Bun', status:'Active', started:'Feb 2026' },
+  changelog: [
+    { v:'v6.8', title:'Fixed tab display bug on narrow windows',         pushedAt:'2026-04-01 14:32 PDT', detail:'Tabs and ADD button now wrap correctly on small viewport widths — no more clipped controls.' },
+    { v:'v6.7', title:'Added Recent view for terminal activity log',      pushedAt:'2026-03-28 10:15 PDT', detail:'Shows last 50 verbs displayed in terminal, with full-page two-column view and hover tooltips.' },
+    { v:'v6.6', title:'Added Proposals History page',                    pushedAt:'2026-03-22 16:44 PDT', detail:'Day-based grouping of AI-suggested verbs with bulk delete per day.' },
+    { v:'v6.5', title:'Replaced header stats with sync detail dropdown',  pushedAt:'2026-03-15 09:20 PDT', detail:'Clickable dropdown shows exactly which verbs are out of sync between editor and settings.json.' },
+    { v:'v6.4', title:'AI harvester with cron + lock file safety',        pushedAt:'2026-03-08 11:05 PDT', detail:'Hourly cron job, multi-instance lock file safety, Windows toast notification on completion.' }
+  ],
+  backlog: [
+    { title:'Export verbs to CSV',      summary:'Download all active verbs as a spreadsheet',     detail:'Add a header button that downloads a CSV of all active verbs with category, subcategory, date added, and active status.', done:false },
+    { title:'Bulk category rename',     summary:'Rename a parent and all its children at once',   detail:'Add a cascading rename modal on parent categories that atomically updates all child subcategories in spinners.md.', done:false },
+    { title:'Verb usage analytics',     summary:'Track which verbs appear in terminal over time', detail:'Parse Claude Code activity logs to count verb appearances per session. Surface as a sort option in the main verb grid.', done:false },
+    { title:'Mobile-responsive layout', summary:'Make the editor usable on tablet/phone screens', detail:'Implement a responsive layout that collapses the sidebar into a dropdown and stacks the verb grid in a single column.', done:false }
+  ],
+  objectives: [
+    { title:'Single source of truth for spinner verbs', priority:'Core',    detail:'Replace all manual edits to settings.json with the editor as the canonical database. No verb modified outside this tool.' },
+    { title:'AI-powered continuous discovery',          priority:'Core',    detail:'Run the AI harvester on a continuous schedule to propose new verbs per category, reducing manual curation effort.' },
+    { title:'Visual management with no file editing',   priority:'Core',    detail:'Provide a complete web UI so the user never directly edits spinners.md, settings.json, or any data file.' },
+    { title:'Usage analytics to inform curation',       priority:'Planned', detail:'Track which verbs appear in terminal sessions so low-usage verbs can be identified and popular categories expanded.' },
+    { title:'Sister project parity with Aphorism',      priority:'Ongoing', detail:'Keep Spinners and Aphorism editors in architectural parity — shared UI patterns, matching keybindings in project launcher.' }
+  ]
+};
+
+var layout = 'A', theme = 'dark';
+var tabs = { A:'changelog', B:'info', C:'changelog' };
+
+function e(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function logo() {
+  return '<svg width="24" height="24" viewBox="0 0 26 26" fill="none">'
+    +'<rect x="0"  y="0"  width="11" height="11" rx="1.5" fill="#1d4ed8"/>'
+    +'<rect x="15" y="0"  width="11" height="11" rx="1.5" fill="#2563eb"/>'
+    +'<rect x="0"  y="15" width="11" height="11" rx="1.5" fill="#2563eb"/>'
+    +'<rect x="15" y="15" width="11" height="11" rx="1.5" fill="#60a5fa"/>'
+    +'</svg>';
+}
+
+function header() {
+  return '<header class="app-header">'
+    +'<div class="hdr-logo">'+logo()+'<div><span class="hdr-logo-title">PORTFOLIO</span><span class="hdr-logo-sub">&#8592; Back to Projects</span></div></div>'
+    +'<span class="hdr-sep">/</span>'
+    +'<div class="hdr-proj">'
+      +'<span class="hdr-proj-name">'+e(D.proj.name)+'</span>'
+      +'<span class="hdr-proj-ver">'+e(D.proj.version)+'</span>'
+      +'<span class="hdr-proj-desc">'+e(D.proj.desc)+'</span>'
+    +'</div>'
+    +'<div class="hdr-right">'
+      +'<div class="hdr-divider"></div>'
+      +'<div class="hdr-stats">'
+        +'<div class="hdr-stat"><span class="hdr-stat-n">'+D.changelog.length+'</span><span class="hdr-stat-l">Changelog</span></div>'
+        +'<div class="hdr-stat"><span class="hdr-stat-n">'+D.backlog.length+'</span><span class="hdr-stat-l">Backlog</span></div>'
+        +'<div class="hdr-stat"><span class="hdr-stat-n">'+D.objectives.length+'</span><span class="hdr-stat-l">Objectives</span></div>'
+      +'</div>'
+      +'<div class="hdr-divider"></div>'
+      +'<a class="hbtn-gh" href="#">&#8599; GH</a>'
+      +'<button class="hbtn-ghost">&#8592; BACK</button>'
+      +'<button class="hbtn" data-action="theme">THEME</button>'
+    +'</div>'
+  +'</header>';
+}
+
+function tabBar(opts, active, l) {
+  return '<div class="tabs-bar">'+opts.map(function(o){
+    return '<button class="tab-btn'+(active===o[0]?' active':'')+'" data-tab="'+o[0]+'" data-layout="'+l+'">'+o[1]+'</button>';
+  }).join('')+'</div>';
+}
+
+function clHTML() {
+  return '<div class="cl-list">'+D.changelog.map(function(en){
+    return '<div class="row-item cl-item" data-expandable'
+      +' data-tt-title="'+e(en.v+' \u2014 '+en.title)+'"'
+      +' data-tt-body="'+e(en.detail)+'"'
+      +' data-tt-footer="'+e('Pushed live: '+en.pushedAt)+'">'
+      +'<div class="row-compact">'
+        +'<span class="cl-v">'+e(en.v)+'</span>'
+        +'<span class="cl-title">'+e(en.title)+'</span>'
+        +'<span class="row-chevron">&#8250;</span>'
+      +'</div>'
+      +'<div class="row-expand">'
+        +'<div class="row-detail">'+e(en.detail)+'</div>'
+        +'<div class="row-meta">Pushed live: '+e(en.pushedAt)+'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('')+'</div>';
+}
+
+function blHTML() {
+  return '<div class="bl-list">'+D.backlog.map(function(b){
+    return '<div class="row-item bl-item" data-expandable'
+      +' data-tt-title="'+e(b.title)+'"'
+      +' data-tt-body="'+e(b.detail)+'"'
+      +' data-tt-footer="">'
+      +'<div class="row-compact">'
+        +'<input type="checkbox" class="bl-cb"'+(b.done?' checked':'')+' onclick="event.stopPropagation()">'
+        +'<div class="bl-title-row">'
+          +'<span class="bl-title">'+e(b.title)+'</span>'
+          +'<span class="bl-sep">&#183;</span>'
+          +'<span class="bl-summary">'+e(b.summary)+'</span>'
+        +'</div>'
+        +'<div class="bl-acts">'
+          +'<button class="btn-edit" onclick="event.stopPropagation()">EDIT</button>'
+          +'<button class="btn-del" onclick="event.stopPropagation()">DEL</button>'
+        +'</div>'
+        +'<span class="row-chevron">&#8250;</span>'
+      +'</div>'
+      +'<div class="row-expand"><div class="row-detail">'+e(b.detail)+'</div></div>'
+    +'</div>';
+  }).join('')+'</div>';
+}
+
+function objHTML() {
+  var cls = { Core:'core', Planned:'planned', Ongoing:'ongoing' };
+  return '<div class="obj-list">'+D.objectives.map(function(o){
+    return '<div class="row-item obj-item" data-expandable'
+      +' data-tt-title="'+e(o.title)+'"'
+      +' data-tt-body="'+e(o.detail)+'"'
+      +' data-tt-footer="'+e('Priority: '+o.priority)+'">'
+      +'<div class="row-compact">'
+        +'<span class="obj-badge '+(cls[o.priority]||'core')+'">'+e(o.priority)+'</span>'
+        +'<span class="obj-title">'+e(o.title)+'</span>'
+        +'<span class="row-chevron">&#8250;</span>'
+      +'</div>'
+      +'<div class="row-expand"><div class="row-detail">'+e(o.detail)+'</div></div>'
+    +'</div>';
+  }).join('')+'</div>';
+}
+
+function infoHTML() {
+  return '<div class="info-doc">'
+    +'<h2>Overview</h2>'
+    +'<p>The <strong>Spinners Editor</strong> manages Claude Code\'s spinner verbs — animated status messages while Claude works (e.g., "Reverse-engineering\u2026", "Warp-driving\u2026"). Runs as a Bun server on port 7433.</p>'
+    +'<h2>Tech Stack</h2>'
+    +'<table class="info-tbl"><tr><th>Component</th><th>Technology</th></tr>'
+    +'<tr><td>Server</td><td><code>server.ts</code> \u2014 Bun / TypeScript</td></tr>'
+    +'<tr><td>Frontend</td><td>Single-page HTML/CSS/JS</td></tr>'
+    +'<tr><td>Harvester</td><td>Python 3 + rapidfuzz</td></tr>'
+    +'<tr><td>AI Backend</td><td>PAI Inference.ts (Sonnet)</td></tr>'
+    +'<tr><td>Port</td><td><code>7433</code></td></tr></table>'
+    +'<h2>Key Features</h2><ul>'
+    +'<li>Two-level category hierarchy (parent \u2192 subcategory) with sidebar navigation</li>'
+    +'<li>AI harvester proposes new verbs hourly \u2014 approve or reject before they are added</li>'
+    +'<li>Sync workflow keeps editor database separate from Claude Code\'s active verb list</li>'
+    +'</ul>'
+    +'<h2>Related Projects</h2>'
+    +'<div class="rel-cards">'
+    +'<div class="rel-card"><div class="rel-card-title">Aphorism</div><div class="rel-card-desc">Sister project on port 7434 \u2014 identical architecture and harvester workflow.</div></div>'
+    +'<div class="rel-card"><div class="rel-card-title">PAI / Claude Code</div><div class="rel-card-desc">Primary consumer \u2014 reads settings.json to display spinner messages in the CLI.</div></div>'
+    +'</div></div>';
+}
+
+function tabContent(t) {
+  if (t==='changelog')  return clHTML();
+  if (t==='backlog')    return blHTML();
+  if (t==='objective')  return objHTML();
+  if (t==='info')       return infoHTML();
+  return '';
+}
+
+function renderA() {
+  var t = tabs.A;
+  return header()
+    +tabBar([['objective','OBJECTIVE'],['changelog','CHANGELOG'],['backlog','BACKLOG']], t, 'A')
+    +'<div class="content-area">'+tabContent(t)+'</div>';
+}
+
+function renderB() {
+  var t = tabs.B;
+  return header()
+    +tabBar([['info','INFO'],['objective','OBJECTIVE'],['changelog','CHANGELOG'],['backlog','BACKLOG']], t, 'B')
+    +'<div class="content-area">'+tabContent(t)+'</div>';
+}
+
+function renderC() {
+  var t = tabs.C;
+  return header()
+    +'<div class="split-wrap">'
+    +'<div class="split-left">'
+    +'<div><div class="sp-sec">Project Info</div><div class="sp-meta">'
+    +'<div class="sp-row"><span class="sp-key">Status</span><span class="sp-val" style="color:var(--success)">'+e(D.proj.status)+'</span></div>'
+    +'<div class="sp-row"><span class="sp-key">Language</span><span class="sp-val">'+e(D.proj.lang)+'</span></div>'
+    +'<div class="sp-row"><span class="sp-key">Port</span><span class="sp-val">'+e(D.proj.port)+'</span></div>'
+    +'<div class="sp-row"><span class="sp-key">Started</span><span class="sp-val">'+e(D.proj.started)+'</span></div>'
+    +'</div></div>'
+    +'<div><div class="sp-sec">Version Timeline</div><div class="sp-tl">'
+    +D.changelog.map(function(en){
+      return '<div class="sp-tl-item"><div class="sp-dot"></div>'
+        +'<span class="sp-tl-v">'+e(en.v)+'</span>'
+        +'<span class="sp-tl-t">'+e(en.title)+'</span>'
+        +'<span class="sp-tl-d">'+en.pushedAt.slice(5,10)+'</span></div>';
+    }).join('')
+    +'</div></div>'
+    +'<div><div class="sp-sec">Related</div><div class="sp-rel">'
+    +'<div class="sp-rel-link">&#8599; Aphorism</div>'
+    +'<div class="sp-rel-link">&#8599; PAI Infrastructure</div>'
+    +'</div></div>'
+    +'</div>'
+    +'<div class="split-right">'
+    +tabBar([['objective','OBJECTIVE'],['changelog','CHANGELOG'],['backlog','BACKLOG']], t, 'C')
+    +'<div class="content-area">'+tabContent(t)+'</div>'
+    +'</div></div>';
+}
+
+function render() {
+  document.getElementById('preview-inner').innerHTML =
+    layout==='A' ? renderA() : layout==='B' ? renderB() : renderC();
+  document.getElementById('pg-prompt-text').textContent = PROMPTS[layout];
+}
+
+function setLayout(l) {
+  layout = l;
+  ['A','B','C'].forEach(function(x){ document.getElementById('btn-'+x.toLowerCase()).classList.toggle('active', x===l); });
+  render();
+}
+
+function toggleTheme() {
+  theme = theme==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  render();
+}
+
+/* ── Event delegation ── */
+var preview  = document.getElementById('preview-inner');
+var tt       = document.getElementById('tt');
+var ttTitle  = document.getElementById('tt-title');
+var ttBody   = document.getElementById('tt-body');
+var ttFoot   = document.getElementById('tt-footer');
+var ttTarget = null;
+
+preview.addEventListener('click', function(ev) {
+  if (ev.target.closest('[data-action="theme"]')) { toggleTheme(); return; }
+  var tab = ev.target.closest('[data-tab][data-layout]');
+  if (tab) { tabs[tab.dataset.layout] = tab.dataset.tab; render(); return; }
+  var item = ev.target.closest('[data-expandable]');
+  if (item) item.classList.toggle('expanded');
+});
+
+preview.addEventListener('mouseover', function(ev) {
+  var item = ev.target.closest('[data-expandable]');
+  if (item && item !== ttTarget) {
+    ttTarget = item;
+    ttTitle.textContent = item.dataset.ttTitle || '';
+    ttBody.textContent  = item.dataset.ttBody  || '';
+    var f = item.dataset.ttFooter || '';
+    ttFoot.textContent = f; ttFoot.style.display = f ? 'block' : 'none';
+    tt.style.display = 'block';
+  }
+});
+
+preview.addEventListener('mouseout', function(ev) {
+  var item = ev.target.closest('[data-expandable]');
+  if (item && !item.contains(ev.relatedTarget)) { tt.style.display='none'; ttTarget=null; }
+});
+
+document.addEventListener('mousemove', function(ev) {
+  if (tt.style.display==='none') return;
+  var x=ev.clientX+14, y=ev.clientY+14, w=tt.offsetWidth, h=tt.offsetHeight;
+  tt.style.left=(x+w>window.innerWidth  ? ev.clientX-w-10 : x)+'px';
+  tt.style.top =(y+h>window.innerHeight ? ev.clientY-h-10 : y)+'px';
+});
+
+var PROMPTS = {
+  A:'Layout A: Project title + version + description + stat counters move into the header bar (PORTFOLIO / SPINNERS EDITOR v6.8 ...). Three tabs: OBJECTIVE, CHANGELOG, BACKLOG. All rows are compact single-line with version badge + title. Hover shows floating detail tooltip; click expands inline with full description and Pushed live datetime.',
+  B:'Layout B: Same header with project context. Four tabs: INFO, OBJECTIVE, CHANGELOG, BACKLOG. INFO tab shows full project documentation. All list rows use compact format with hover tooltip and click-to-expand.',
+  C:'Layout C: Same header. Fixed 268px left panel shows project metadata, version timeline, and related links. Right panel has OBJECTIVE, CHANGELOG, BACKLOG tabs with compact rows, hover tooltip, and click-to-expand.'
+};
+
+function copyPrompt() {
+  navigator.clipboard.writeText(PROMPTS[layout]).then(function(){
+    var b=document.getElementById('pg-copy-btn');
+    b.textContent='COPIED!'; setTimeout(function(){ b.textContent='COPY'; },1600);
+  });
+}
+
+render();
+</script>
+</body>
+</html>

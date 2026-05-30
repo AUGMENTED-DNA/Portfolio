@@ -1,0 +1,36 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  /* Prevent text selection during drag */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#c {
+  display: block;
+  width: 100%; height: 100%;
+  cursor: grab;
+  /* Required for Electron transparent window */
+  -webkit-app-region: no-drag;
+}
+#c.dragging { cursor: grabbing; }
+
+#tooltip {
+  position: fixed;
+  background: rgba(10,10,20,0.92);
+  color: #8ab4f8;
+  border: 1px solid rgba(138,180,248,0.35);
+  border-radius: 6px;
+  padding: 5px 11px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+  white-space: nowrap;
+  z-index: 10;
+}
+#tooltip.visible { opacity: 1; }
