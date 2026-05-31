@@ -29,7 +29,7 @@ const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const tip    = document.getElementById('tooltip');
 
-let W, H, CX, CY, ORBIT_R, NODE_R, CENTER_R, INNER_R;
+let W, H, CX, CY, ORBIT_R, NODE_R, CENTER_R, INNER_R, CIRCLE_R;
 
 function resize() {
   const cont = canvas.parentElement;
@@ -37,6 +37,7 @@ function resize() {
   H = canvas.height = (cont && cont.clientHeight) || window.innerHeight;
   CX = W / 2; CY = H / 2;
   const minDim = Math.min(W, H);
+  CIRCLE_R = minDim / 2;
   ORBIT_R  = minDim * 0.37;
   NODE_R   = minDim * 0.055;
   CENTER_R = minDim * 0.10;
@@ -114,7 +115,7 @@ function nodePos(i) {
   return { x: CX + Math.cos(a) * ORBIT_R, y: CY + Math.sin(a) * ORBIT_R };
 }
 function isInCircle(mx, my) {
-  return Math.hypot(mx - CX, my - CY) < ORBIT_R + NODE_R + 10;
+  return Math.hypot(mx - CX, my - CY) < CIRCLE_R * 0.97;
 }
 function hitNode(mx, my) {
   for (let i = 0; i < N; i++) {
@@ -133,6 +134,12 @@ function hitCenterItem(mx, my) {
   }
   return null;
 }
+// Inner void + outer atmosphere = window-drag zones
+function isBackgroundZone(mx, my) {
+  const d = Math.hypot(mx - CX, my - CY);
+  return (d < ORBIT_R - NODE_R - 5 && d > CENTER_R * 1.2) ||
+         (d > ORBIT_R + NODE_R + 10 && d < CIRCLE_R * 0.97);
+}
 
 // ─── Drag / click-through ────────────────────────────────────────────────────
 let dragging = false, prevDragAngle = 0;
@@ -142,6 +149,13 @@ function ptrAngle(x, y) { return Math.atan2(y - CY, x - CX); }
 canvas.addEventListener('pointerdown', e => {
   ensureAudio();
   if (!isInCircle(e.clientX, e.clientY)) return;
+
+  // Background zone (inner void, outer atmosphere) -> move the window
+  if (window.electron && isBackgroundZone(e.clientX, e.clientY)) {
+    window.electron.startDrag();
+    return;
+  }
+
   dragging      = true;
   autoRotate    = false;
   velocity      = 0;
@@ -199,6 +213,14 @@ function handleHover(mx, my) {
   if (hoveredNode !== null) {
     tip.style.left = (mx + 16) + 'px';
     tip.style.top  = (my - 10) + 'px';
+  }
+  // Show move cursor in window-drag background zones
+  if (window.electron && isInCircle(mx, my) && isBackgroundZone(mx, my)) {
+    canvas.style.cursor = 'move';
+  } else if (h !== null) {
+    canvas.style.cursor = 'pointer';
+  } else {
+    canvas.style.cursor = '';
   }
 }
 
@@ -297,8 +319,8 @@ function drawCenter() {
     ctx.arc(cx, cy, INNER_R, 0, Math.PI * 2);
     ctx.fillStyle   = 'rgba(10,12,20,0.9)';
     ctx.fill();
-    ctx.strokeStyle = item.color + 'cc';
-    ctx.lineWidth   = 1.5;
+    ctx.strokeStyle = item.color + '88';
+    ctx.lineWidth   = 1.2;
     ctx.stroke();
 
     ctx.fillStyle    = item.color;
@@ -316,7 +338,6 @@ function drawCenter() {
 
 // ─── Main loop ────────────────────────────────────────────────────────────────
 function frame() {
-  // Clear to transparent (Electron shows through outside the circle)
   ctx.clearRect(0, 0, W, H);
   tickPhysics();
   for (let i = 0; i < N; i++) drawSpoke(nodePos(i).x, nodePos(i).y);
@@ -348,8 +369,9 @@ document.querySelectorAll('#toggle-bar button').forEach(btn => {
     if (controls) controls.style.display = 'none';
     return;
   }
-  const btnClose   = document.getElementById('btn-close');
-  const btnMinimize = document.getElementById('btn-minimize');
-  if (btnClose)    btnClose.addEventListener('click',    () => window.electron.close());
-  if (btnMinimize) btnMinimize.addEventListener('click', () => window.electron.minimize());
+  document.getElementById('btn-close')   ?.addEventListener('click', () => window.electron.close());
+  document.getElementById('btn-minimize')?.addEventListener('click', () => window.electron.minimize());
+  document.getElementById('btn-size-s')  ?.addEventListener('click', () => window.electron.resize(650));
+  document.getElementById('btn-size-m')  ?.addEventListener('click', () => window.electron.resize(900));
+  document.getElementById('btn-size-l')  ?.addEventListener('click', () => window.electron.resize(1150));
 }());

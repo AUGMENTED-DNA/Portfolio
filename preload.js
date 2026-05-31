@@ -1,7 +1,9 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld('electron', {
-  setIgnoreMouse: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore),
-  close:          ()       => ipcRenderer.send('close-window'),
-  minimize:       ()       => ipcRenderer.send('minimize-window'),
+contextBridge.exposeInMainWorld("electron", {
+  setIgnoreMouse: (ignore) => ipcRenderer.send("set-ignore-mouse", ignore),
+  startDrag:      ()       => ipcRenderer.send("start-drag"),
+  close:          ()       => ipcRenderer.send("close-window"),
+  minimize:       ()       => ipcRenderer.send("minimize-window"),
+  resize:         (size)   => ipcRenderer.send("resize-window", size),
 });
