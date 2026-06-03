@@ -375,3 +375,19 @@ document.querySelectorAll('#toggle-bar button').forEach(btn => {
   document.getElementById('btn-size-m')  ?.addEventListener('click', () => window.electron.resize(900));
   document.getElementById('btn-size-l')  ?.addEventListener('click', () => window.electron.resize(1150));
 }());
+
+// ─── Help overlay ─────────────────────────────────────────────────────────────
+(function () {
+  const overlay = document.getElementById('help-overlay');
+  if (!overlay) return;
+  if (localStorage.getItem('pai-help-seen')) {
+    overlay.classList.add('hidden');
+    return;
+  }
+  function dismiss() {
+    overlay.classList.add('hidden');
+    localStorage.setItem('pai-help-seen', '1');
+  }
+  overlay.addEventListener('click', dismiss);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') dismiss(); });
+}());

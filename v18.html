@@ -49,6 +49,36 @@
       opacity: 0; transition: opacity 0.12s; white-space: nowrap; z-index: 10;
     }
     #tooltip.visible { opacity: 1; }
+    #help-overlay {
+      position: absolute; inset: 0; border-radius: 50%; z-index: 30;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center;
+      background: rgba(5,7,18,0.84);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    #help-overlay.hidden { display: none; }
+    #help-overlay h2 {
+      color: #8ab4f8; font-size: clamp(11px,1.1vmin,15px); font-weight: 600;
+      letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .help-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      width: 58%; margin-bottom: 10px;
+    }
+    .help-icon {
+      font-size: clamp(13px,1.5vmin,20px); min-width: 24px;
+      text-align: center; color: #3b5bdb; line-height: 1.4;
+    }
+    .help-text {
+      font-size: clamp(10px,1vmin,13px);
+      color: rgba(200,212,255,0.80); line-height: 1.5;
+    }
+    .help-text strong { color: #8ab4f8; font-weight: 600; }
+    .help-dismiss {
+      margin-top: 18px; font-size: clamp(9px,0.85vmin,11px);
+      color: rgba(138,180,248,0.40); letter-spacing: 0.06em;
+    }
   </style>
 </head>
 <body>
@@ -62,6 +92,30 @@
       <button class="win-btn" id="btn-close"    title="Close">&#215;</button>
     </div>
     <canvas id="c"></canvas>
+    <div id="help-overlay">
+      <h2>PAI Launcher — How to Use</h2>
+      <div class="help-row">
+        <span class="help-icon">↻</span>
+        <span class="help-text"><strong>Rotate ring</strong> — drag any outer project circle left or right</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">✥</span>
+        <span class="help-text"><strong>Move window</strong> — drag the dark void between the ring and center hub</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">↗</span>
+        <span class="help-text"><strong>Open project</strong> — click any outer circle to launch it in a new window</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">⬢</span>
+        <span class="help-text"><strong>Center hub</strong> — click PAI, Claude, or Hermes to launch each system</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">⊡</span>
+        <span class="help-text"><strong>Controls</strong> — hover the top edge to reveal S/M/L resize, minimize, and close</span>
+      </div>
+      <div class="help-dismiss">click anywhere to dismiss</div>
+    </div>
   </div>
   <div id="tooltip"></div>
   <script src="app.js"></script>
