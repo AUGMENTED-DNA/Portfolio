@@ -193,6 +193,15 @@ canvas.addEventListener('pointerup', () => {
 canvas.addEventListener('click', e => {
   const ni = hitNode(e.clientX, e.clientY);
   if (ni !== null) { openProject(OUTER[ni]); return; }
+
+  // Hit-test the red close X at bottom of center hub
+  const xY = CY + CENTER_R * 0.78;
+  const xR = CENTER_R * 0.22;
+  if (Math.hypot(e.clientX - CX, e.clientY - xY) < xR) {
+    if (window.electron) window.electron.close();
+    return;
+  }
+
   const ci = hitCenterItem(e.clientX, e.clientY);
   if (ci !== null) { openCenter(CENTER_ITEMS[ci]); }
 });
@@ -334,6 +343,24 @@ function drawCenter() {
     ctx.textBaseline = 'top';
     ctx.fillText(item.name, cx, cy + INNER_R + 3);
   });
+
+  // Red close X at bottom of center hub
+  const xR = CENTER_R * 0.22;
+  const xY = CY + CENTER_R * 0.78;
+  ctx.beginPath();
+  ctx.arc(CX, xY, xR, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(10,12,20,0.90)';
+  ctx.fill();
+  ctx.strokeStyle = '#e53935';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.strokeStyle = '#e53935';
+  ctx.lineWidth = 2;
+  const xOff = xR * 0.45;
+  ctx.beginPath();
+  ctx.moveTo(CX - xOff, xY - xOff); ctx.lineTo(CX + xOff, xY + xOff);
+  ctx.moveTo(CX + xOff, xY - xOff); ctx.lineTo(CX - xOff, xY + xOff);
+  ctx.stroke();
 }
 
 // ─── Main loop ────────────────────────────────────────────────────────────────
@@ -371,9 +398,17 @@ document.querySelectorAll('#toggle-bar button').forEach(btn => {
   }
   document.getElementById('btn-close')   ?.addEventListener('click', () => window.electron.close());
   document.getElementById('btn-minimize')?.addEventListener('click', () => window.electron.minimize());
-  document.getElementById('btn-size-s')  ?.addEventListener('click', () => window.electron.resize(650));
-  document.getElementById('btn-size-m')  ?.addEventListener('click', () => window.electron.resize(900));
-  document.getElementById('btn-size-l')  ?.addEventListener('click', () => window.electron.resize(1150));
+
+  let _currentSize = 900;
+  const ZOOM_STEP = 50, ZOOM_MIN = 400, ZOOM_MAX = 1400;
+  document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
+    _currentSize = Math.min(_currentSize + ZOOM_STEP, ZOOM_MAX);
+    window.electron.resize(_currentSize);
+  });
+  document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
+    _currentSize = Math.max(_currentSize - ZOOM_STEP, ZOOM_MIN);
+    window.electron.resize(_currentSize);
+  });
 }());
 
 // ─── Help overlay ─────────────────────────────────────────────────────────────
