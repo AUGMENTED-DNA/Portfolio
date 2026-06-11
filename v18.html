@@ -48,7 +48,7 @@
       opacity: 0; transition: opacity 0.12s; white-space: nowrap; z-index: 10;
     }
     #tooltip.visible { opacity: 1; }
-    #help-overlay {
+    #help-overlay, #about-overlay {
       position: absolute; inset: 0; border-radius: 50%; z-index: 30;
       display: flex; flex-direction: column; align-items: center;
       justify-content: center;
@@ -56,8 +56,8 @@
       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
       cursor: pointer; transition: opacity 0.2s;
     }
-    #help-overlay.hidden { display: none; }
-    #help-overlay h2 {
+    #help-overlay.hidden, #about-overlay.hidden { display: none; }
+    #help-overlay h2, #about-overlay h2 {
       color: #8ab4f8; font-size: clamp(11px,1.1vmin,15px); font-weight: 600;
       letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 14px;
     }
@@ -78,11 +78,14 @@
       margin-top: 18px; font-size: clamp(9px,0.85vmin,11px);
       color: rgba(138,180,248,0.40); letter-spacing: 0.06em;
     }
+    #about-overlay .help-row { width: 64%; margin-bottom: 8px; }
   </style>
 </head>
 <body>
   <div id="orbital-window">
     <div id="win-controls">
+      <button class="win-btn" id="btn-about"    title="About">?</button>
+      <div class="win-sep"></div>
       <button class="win-btn" id="btn-zoom-in"  title="Zoom in">＋</button>
       <button class="win-btn" id="btn-zoom-out" title="Zoom out">－</button>
       <div class="win-sep"></div>
@@ -110,7 +113,38 @@
       </div>
       <div class="help-row">
         <span class="help-icon">⊡</span>
-        <span class="help-text"><strong>Controls</strong> — hover the top edge to reveal S/M/L resize, minimize, and close</span>
+        <span class="help-text"><strong>Controls</strong> — top bar: ? About, ＋/－ zoom, minimize (−), close (×); red X on hub also closes</span>
+      </div>
+      <div class="help-dismiss">click anywhere to dismiss</div>
+    </div>
+    <div id="about-overlay" class="hidden">
+      <h2>About — PAI Launcher v2.5</h2>
+      <div class="help-row">
+        <span class="help-icon">⬢</span>
+        <span class="help-text"><strong>What it is</strong> — a circular desktop widget (Electron) that acts as
+        the launch pad for Dane's Personal AI Infrastructure. The frameless round window
+        floats over the desktop; everything outside the circle is click-through.</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">◉</span>
+        <span class="help-text"><strong>What it does</strong> — 14 project circles ride a rotating ratchet ring
+        (Email Agent, Todoist, Health, Spinners, Council, and more). Clicking one opens that
+        project's web app at its localhost port in its own window. The center hub launches
+        PAI, Claude, and Hermes.</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">✥</span>
+        <span class="help-text"><strong>How to use it</strong> — drag the ring to rotate (it clicks into place);
+        click a circle to open it; drag the dark void to move the window; ＋/－ zoom the circle
+        between 400 and 1400 px; − minimizes; × or the small red X on the hub closes; ? shows
+        this screen. Escape or a click dismisses overlays.</span>
+      </div>
+      <div class="help-row">
+        <span class="help-icon">⚙</span>
+        <span class="help-text"><strong>How it works</strong> — plain HTML, CSS, and canvas JavaScript, no
+        framework. Snap physics with a Web Audio click drive the ring. An Electron IPC bridge
+        (preload.js → main.js) handles window move, smooth resize, minimize, and close.
+        Launch it from the PAI menu (P2) or the <strong>orbital</strong> command.</span>
       </div>
       <div class="help-dismiss">click anywhere to dismiss</div>
     </div>

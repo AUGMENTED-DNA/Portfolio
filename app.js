@@ -146,12 +146,20 @@ let dragging = false, prevDragAngle = 0;
 
 function ptrAngle(x, y) { return Math.atan2(y - CY, x - CX); }
 
+// Event coords are viewport-relative; all circle math is canvas-local.
+// The canvas sits offset inside the page, so convert before hit-testing.
+function localXY(e) {
+  const b = canvas.getBoundingClientRect();
+  return { x: e.clientX - b.left, y: e.clientY - b.top };
+}
+
 canvas.addEventListener('pointerdown', e => {
   ensureAudio();
-  if (!isInCircle(e.clientX, e.clientY)) return;
+  const p = localXY(e);
+  if (!isInCircle(p.x, p.y)) return;
 
   // Background zone (inner void, outer atmosphere) -> move the window
-  if (window.electron && isBackgroundZone(e.clientX, e.clientY)) {
+  if (window.electron && isBackgroundZone(p.x, p.y)) {
     window.electron.startDrag();
     return;
   }
@@ -159,13 +167,14 @@ canvas.addEventListener('pointerdown', e => {
   dragging      = true;
   autoRotate    = false;
   velocity      = 0;
-  prevDragAngle = ptrAngle(e.clientX, e.clientY);
+  prevDragAngle = ptrAngle(p.x, p.y);
   canvas.classList.add('dragging');
   canvas.setPointerCapture(e.pointerId);
 });
 
 canvas.addEventListener('pointermove', e => {
-  const inCircle = isInCircle(e.clientX, e.clientY);
+  const p = localXY(e);
+  const inCircle = isInCircle(p.x, p.y);
 
   // click-through for transparent areas (Electron only)
   if (window.electron) {
@@ -173,10 +182,10 @@ canvas.addEventListener('pointermove', e => {
   }
 
   if (!dragging) {
-    handleHover(e.clientX, e.clientY);
+    handleHover(p.x, p.y, e.clientX, e.clientY);
     return;
   }
-  const a = ptrAngle(e.clientX, e.clientY);
+  const a = ptrAngle(p.x, p.y);
   let delta = a - prevDragAngle;
   if (delta >  Math.PI) delta -= Math.PI * 2;
   if (delta < -Math.PI) delta += Math.PI * 2;
@@ -188,46 +197,60 @@ canvas.addEventListener('pointermove', e => {
 canvas.addEventListener('pointerup', () => {
   dragging = false;
   canvas.classList.remove('dragging');
+  if (window.electron) window.electron.endDrag();
+});
+window.addEventListener('blur', () => {
+  if (window.electron) window.electron.endDrag();
 });
 
 canvas.addEventListener('click', e => {
-  const ni = hitNode(e.clientX, e.clientY);
+  const p  = localXY(e);
+  const ni = hitNode(p.x, p.y);
   if (ni !== null) { openProject(OUTER[ni]); return; }
 
   // Hit-test the red close X at bottom of center hub
-  const xY = CY + CENTER_R * 0.78;
-  const xR = CENTER_R * 0.22;
-  if (Math.hypot(e.clientX - CX, e.clientY - xY) < xR) {
+  // (visual radius is 0.11; hit zone kept larger so it stays clickable)
+  if (isOverCloseX(p.x, p.y)) {
     if (window.electron) window.electron.close();
     return;
   }
 
-  const ci = hitCenterItem(e.clientX, e.clientY);
+  const ci = hitCenterItem(p.x, p.y);
   if (ci !== null) { openCenter(CENTER_ITEMS[ci]); }
 });
 
 // ─── Hover tooltip ────────────────────────────────────────────────────────────
 let hoveredNode = null;
-function handleHover(mx, my) {
-  const h = hitNode(mx, my);
-  if (h !== hoveredNode) {
+let hoveredX    = false;
+function isOverCloseX(mx, my) {
+  return Math.hypot(mx - CX, my - (CY + CENTER_R * 0.78)) < CENTER_R * 0.15;
+}
+function handleHover(mx, my, vx, vy) {
+  // mx/my are canvas-local (hit-testing); vx/vy are viewport (tooltip)
+  const h     = hitNode(mx, my);
+  const overX = isOverCloseX(mx, my);
+  if (h !== hoveredNode || overX !== hoveredX) {
     hoveredNode = h;
+    hoveredX    = overX;
     if (h !== null) {
       tip.textContent = OUTER[h].name;
+      tip.classList.add('visible');
+    } else if (overX) {
+      tip.textContent = 'Close window';
       tip.classList.add('visible');
     } else {
       tip.classList.remove('visible');
     }
   }
-  if (hoveredNode !== null) {
-    tip.style.left = (mx + 16) + 'px';
-    tip.style.top  = (my - 10) + 'px';
+  if (hoveredNode !== null || hoveredX) {
+    tip.style.left = (vx + 16) + 'px';
+    tip.style.top  = (vy - 10) + 'px';
   }
   // Show move cursor in window-drag background zones
-  if (window.electron && isInCircle(mx, my) && isBackgroundZone(mx, my)) {
-    canvas.style.cursor = 'move';
-  } else if (h !== null) {
+  if (h !== null || overX) {
     canvas.style.cursor = 'pointer';
+  } else if (window.electron && isInCircle(mx, my) && isBackgroundZone(mx, my)) {
+    canvas.style.cursor = 'move';
   } else {
     canvas.style.cursor = '';
   }
@@ -345,7 +368,7 @@ function drawCenter() {
   });
 
   // Red close X at bottom of center hub
-  const xR = CENTER_R * 0.22;
+  const xR = CENTER_R * 0.11;
   const xY = CY + CENTER_R * 0.78;
   ctx.beginPath();
   ctx.arc(CX, xY, xR, 0, Math.PI * 2);
@@ -408,6 +431,18 @@ document.querySelectorAll('#toggle-bar button').forEach(btn => {
   document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
     _currentSize = Math.max(_currentSize - ZOOM_STEP, ZOOM_MIN);
     window.electron.resize(_currentSize);
+  });
+}());
+
+// ─── About overlay ────────────────────────────────────────────────────────────
+(function () {
+  const btn     = document.getElementById('btn-about');
+  const overlay = document.getElementById('about-overlay');
+  if (!btn || !overlay) return;
+  btn.addEventListener('click', () => overlay.classList.remove('hidden'));
+  overlay.addEventListener('click', () => overlay.classList.add('hidden'));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') overlay.classList.add('hidden');
   });
 }());
 

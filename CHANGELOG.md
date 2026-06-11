@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.5 — 2026-06-11
+- P2 menu entry now launches Windows-side Electron via cmd.exe
+  (WSL/WSLg Electron broke transparency and resize) — opens at
+  the 900px medium default
+- Smooth zoom: +/− tweens the window size in 8 eased steps around
+  the window's own center (previously snapped and re-centered on
+  screen, causing visible jerking)
+- Drag-to-move fixed: replaced nonexistent win.startWindowDrag()
+  with cursor-polling drag (start-drag/end-drag IPC)
+- New ? About button in top controls — overlay documents what the
+  launcher is, what it does, how to use it, and how it works
+- Red close X on center hub halved (CENTER_R 0.22 → 0.11 visual,
+  0.15 hit zone) with "Close window" hover tooltip
+- Help overlay text corrected: S/M/L resize → ? About, +/− zoom
+
 ## v2.2 — 2026-06-03
 - Added dismissible help overlay shown on first launch
 - 5 navigation rows: rotate ring, move window, open project,
