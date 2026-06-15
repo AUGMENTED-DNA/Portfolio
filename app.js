@@ -2,16 +2,16 @@
 
 // ─── Project data ────────────────────────────────────────────────────────────
 const OUTER = [
-  { name: 'Email Agent',        port: null, icon: '✉',  color: '#4285f4' },
-  { name: 'Todoist Agent',      port: null, icon: '✓',  color: '#db4035' },
+  { name: 'Email Agent',        port: 8082, icon: '✉',  color: '#4285f4' },
+  { name: 'Todoist Agent',      port: 5000, icon: '✓',  color: '#db4035' },
   { name: 'Health',             port: 3100, icon: '♥',  color: '#34a853' },
-  { name: 'Spinners',           port: null, icon: '◎',  color: '#9c27b0' },
-  { name: 'Aphorism',           port: null, icon: '❝',  color: '#ff9800' },
-  { name: 'YT',                 port: null, icon: '▶',  color: '#ff0000' },
+  { name: 'Spinners',           port: 7433, icon: '◎',  color: '#9c27b0' },
+  { name: 'Aphorism',           port: 7434, icon: '❝',  color: '#ff9800' },
+  { name: 'YT',                 port: 8500, icon: '▶',  color: '#ff0000' },
   { name: 'Handyman',           port: null, icon: '⚒',  color: '#795548' },
-  { name: 'Meissler News',      port: null, icon: '◈',  color: '#607d8b' },
+  { name: 'Meissler News',      port: 7654, icon: '◈',  color: '#607d8b' },
   { name: 'CCBridge',           port: 8200, icon: '⇄',  color: '#00bcd4' },
-  { name: 'FINANCIAL',          port: null, icon: '◉',  color: '#4caf50' },
+  { name: 'FINANCIAL',          port: 3200, icon: '◉',  color: '#4caf50' },
   { name: 'Hub-Bridge',         port: null, icon: '⬡',  color: '#ff5722' },
   { name: 'Utilities',          port: 9000, icon: '⚙',  color: '#9e9e9e' },
   { name: 'Content-Converter',  port: 4000, icon: '⟳',  color: '#673ab7' },

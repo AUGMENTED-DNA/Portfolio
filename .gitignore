@@ -8,3 +8,7 @@ changelog.html
 package-lock.json
 .env
 options/strategies/
+
+# PAI infrastructure (machine-local, not portfolio code)
+.commit-approved
+.pai-server
