@@ -398,19 +398,152 @@ function frame() {
 
 requestAnimationFrame(frame);
 
-// ─── Design toggle ────────────────────────────────────────────────────────────
-const VIEWS = ['v1', 'v17', 'v18'];
-document.querySelectorAll('#toggle-bar button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const target = btn.dataset.target;
-    document.querySelectorAll('#toggle-bar button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    VIEWS.forEach(v => {
-      const el = document.getElementById('view-' + v);
-      if (el) el.classList.toggle('hidden', v !== target);
-    });
+// ─── Left-nav routing ──────────────────────────────────────────────────────────
+const VIEWS = ['v17', 'v18', 'v1', 'work'];
+const crumbsEl  = document.getElementById('crumbs');
+const whNavList = document.getElementById('wh-nav-list');
+const whArrow   = document.querySelector('#nav-work .wh-arrow');
+
+function showView(target) {
+  document.querySelectorAll('.nav-item').forEach(b =>
+    b.classList.toggle('active', b.dataset.target === target));
+  VIEWS.forEach(v => {
+    const el = document.getElementById('view-' + v);
+    if (el) el.classList.toggle('hidden', v !== target);
   });
+  if (target === 'v17') resize();   // canvas needs live dimensions when revealed
+}
+function setWhExpanded(exp) {
+  whNavList.classList.toggle('hidden', !exp);
+  if (whArrow) whArrow.textContent = exp ? '▾' : '▸';
+}
+document.querySelectorAll('.nav-item').forEach(btn =>
+  btn.addEventListener('click', () => {
+    showView(btn.dataset.target);
+    if (btn.dataset.target === 'work') { setWhExpanded(true); showProjects(); }
+  }));
+whArrow?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setWhExpanded(whNavList.classList.contains('hidden'));
 });
+document.getElementById('brand').addEventListener('click', () => showView('v17'));
+
+// Populate the collapsible project list under Work History + set version badges.
+async function buildNav() {
+  let data;
+  try { data = await (await fetch('/api/work-history')).json(); } catch { return; }
+  if (data.appVersion) {
+    const bt = document.querySelector('#brand .brand-text');
+    if (bt) bt.textContent = 'PAI Portfolio ' + data.appVersion;
+  }
+  whNavList.replaceChildren();
+  (data.projects || []).forEach(p => {
+    const b = document.createElement('button'); b.className = 'wh-nav-item';
+    const nm = document.createElement('span'); nm.textContent = p.name;
+    const ct = document.createElement('span'); ct.className = 'wh-nav-count'; ct.textContent = p.sessions;
+    b.append(nm, ct);
+    b.addEventListener('click', () => { showView('work'); showSessions(p.name); });
+    whNavList.appendChild(b);
+  });
+}
+buildNav();
+
+// ─── Work History (session records, tabular) ────────────────────────────────────
+const workEl = document.getElementById('work-content');
+
+function setCrumbs(parts) {
+  crumbsEl.replaceChildren();
+  parts.forEach((p, i) => {
+    if (i) {
+      const s = document.createElement('span'); s.className = 'sep'; s.textContent = '/';
+      crumbsEl.appendChild(s);
+    }
+    const b = document.createElement('button');
+    b.className = 'crumb' + (p.onClick ? '' : ' current');
+    b.textContent = p.label;
+    if (p.onClick) b.addEventListener('click', p.onClick);
+    crumbsEl.appendChild(b);
+  });
+}
+function workMsg(t) {
+  const d = document.createElement('div'); d.className = 'wh-empty'; d.textContent = t;
+  workEl.replaceChildren(d);
+}
+function mkCell(text, cls) {
+  const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = text; return td;
+}
+
+async function showProjects() {
+  setCrumbs([{ label: 'Home', onClick: () => showView('v17') }, { label: 'Work History', onClick: null }]);
+  workMsg('Loading projects…');
+  let data;
+  try { data = await (await fetch('/api/work-history')).json(); }
+  catch (e) { workMsg('Could not load work history.'); return; }
+  const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
+  const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = 'Work History by Project';
+  const sub = document.createElement('div'); sub.className = 'wh-sub';
+  const n = (data.projects || []).length;
+  sub.textContent = n + ' project' + (n === 1 ? '' : 's') +
+    ' with recorded Claude sessions — click one to see its work by topic & session.';
+  wrap.append(h, sub);
+  if (!n) {
+    const e = document.createElement('div'); e.className = 'wh-empty'; e.textContent = 'No session records found.';
+    wrap.append(e); workEl.replaceChildren(wrap); return;
+  }
+  const table = document.createElement('table'); table.className = 'wh';
+  const thead = document.createElement('thead'); const htr = document.createElement('tr');
+  [['Project', ''], ['Version', 'ver'], ['Sessions', 'num'], ['Last Active', '']].forEach(([t, cls]) => {
+    const th = document.createElement('th'); th.textContent = t; if (cls === 'num') th.className = 'num'; htr.appendChild(th);
+  });
+  thead.appendChild(htr); table.appendChild(thead);
+  const tb = document.createElement('tbody');
+  data.projects.forEach(p => {
+    const tr = document.createElement('tr'); tr.className = 'clickable';
+    tr.append(mkCell(p.name), mkCell(p.version || '—', 'ver'), mkCell(p.sessions, 'num'), mkCell(p.lastActive || '—', 'date'));
+    tr.addEventListener('click', () => showSessions(p.name));
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb); wrap.appendChild(table); workEl.replaceChildren(wrap);
+}
+
+async function showSessions(name) {
+  setCrumbs([
+    { label: 'Home', onClick: () => showView('v17') },
+    { label: 'Work History', onClick: showProjects },
+    { label: name, onClick: null },
+  ]);
+  workMsg('Loading ' + name + ' sessions…');
+  let data;
+  try { data = await (await fetch('/api/work-history?project=' + encodeURIComponent(name))).json(); }
+  catch (e) { workMsg('Could not load sessions for ' + name + '.'); return; }
+  const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
+  const ver = data.version ? ' ' + data.version : '';
+  const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = name + ver + ' — Work by Session';
+  const sub = document.createElement('div'); sub.className = 'wh-sub';
+  const cap = data.total > data.shown ? (' (showing ' + data.shown + ' most recent of ' + data.total + ')') : '';
+  sub.textContent = data.total + ' recorded session' + (data.total === 1 ? '' : 's') + cap +
+    '. Topic is each session’s auto-generated title.';
+  wrap.append(h, sub);
+  const sessions = data.sessions || [];
+  if (!sessions.length) {
+    const e = document.createElement('div'); e.className = 'wh-empty'; e.textContent = 'No sessions found for this project.';
+    wrap.append(e); workEl.replaceChildren(wrap); return;
+  }
+  const table = document.createElement('table'); table.className = 'wh';
+  const thead = document.createElement('thead'); const htr = document.createElement('tr');
+  ['Date', 'Topic'].forEach(t => { const th = document.createElement('th'); th.textContent = t; htr.appendChild(th); });
+  thead.appendChild(htr); table.appendChild(thead);
+  const tb = document.createElement('tbody');
+  sessions.forEach(s => {
+    const tr = document.createElement('tr');
+    const cTopic = document.createElement('td');
+    const sp = document.createElement('span'); sp.className = 'wh-topic'; sp.textContent = s.topic || '(untitled)';
+    cTopic.appendChild(sp);
+    tr.append(mkCell(s.date || '—', 'date'), cTopic);
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb); wrap.appendChild(table); workEl.replaceChildren(wrap);
+}
 
 // ─── Window controls (Electron only) ─────────────────────────────────────────
 (function () {

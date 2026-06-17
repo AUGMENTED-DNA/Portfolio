@@ -4,33 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self' http://localhost:3001;
+        content="default-src 'self' http://localhost:3000;
                  script-src 'self';
                  style-src 'self';
-                 frame-src 'self' http://localhost:3001">
+                 frame-src 'self' http://localhost:3000">
   <link rel="stylesheet" href="styles.css">
   <title>PAI Launcher</title>
 </head>
 <body>
-  <div id="toggle-bar">
-    <button id="btn-v1"  data-target="v1">v1 — Table</button>
-    <button id="btn-v17" data-target="v17" class="active">v1.7 — Orbital</button>
-    <button id="btn-v18" data-target="v18">v1.8 — Circular</button>
+  <div id="app">
+    <nav id="side-nav">
+      <button id="brand" type="button" title="Back to launcher home">
+        <span class="brand-mark">⬢</span><span class="brand-text">PAI Portfolio</span>
+      </button>
+      <div class="nav-links">
+        <button class="nav-item active" data-target="v17">◎ Orbital</button>
+        <button class="nav-item" data-target="v18">○ Circular</button>
+        <button class="nav-item" data-target="v1">▦ V1 Table</button>
+        <button class="nav-item" id="nav-work" data-target="work"><span class="wh-arrow">▸</span> 🗂 Work History</button>
+        <div id="wh-nav-list" class="wh-nav-list hidden"></div>
+      </div>
+    </nav>
+    <main id="main">
+      <section id="view-v17" class="view">
+        <canvas id="c"></canvas>
+        <div id="tooltip"></div>
+      </section>
+      <section id="view-v1" class="view hidden">
+        <iframe id="v1-frame" src="http://localhost:3000" title="v1 Portfolio"></iframe>
+      </section>
+      <section id="view-v18" class="view hidden">
+        <iframe id="v18-frame" src="/v18.html" title="v1.8 Circular"></iframe>
+      </section>
+      <section id="view-work" class="view hidden">
+        <div id="crumbs"></div>
+        <div id="work-content"></div>
+      </section>
+    </main>
   </div>
-
-  <div id="view-v17" class="view">
-    <canvas id="c"></canvas>
-    <div id="tooltip"></div>
-  </div>
-
-  <div id="view-v1" class="view hidden">
-    <iframe id="v1-frame" src="http://localhost:3001" title="v1 Portfolio"></iframe>
-  </div>
-
-  <div id="view-v18" class="view hidden">
-    <iframe id="v18-frame" src="/v18.html" title="v1.8 Circular"></iframe>
-  </div>
-
   <script src="app.js"></script>
 </body>
 </html>

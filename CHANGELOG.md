@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.9 — 2026-06-17
+- New Work History page (left nav): per-project work by topic & session,
+  from Claude session records (aiTitle), not git commits
+- Collapsible Work History nav: arrow toggles a nested, indented list of
+  all 17 projects with session counts; nav count matches the page
+- Coverage audit → canonical 17-project set (added PAI Visual, PAI GUI;
+  0-session projects now shown), so the menu count equals the display count
+- Version numbers in headings: brand "PAI Portfolio <ver>", a Version
+  column, and "<project> <ver> — Work by Session" per project
+- Navigation restructured: top toggle-bar → left sidebar
+  (Orbital / Circular / V1 Table / Work History) with breadcrumbs and a
+  clickable upper-left heading that returns to the orbital home
+- Fixed V1 Table: iframe + CSP repointed from port 3001 → 3000
+- server.js: /api/work-history endpoints (session-records backend,
+  per-project git version, 60-session cap, 30s cache, robust slug matching)
+
 ## v2.5 — 2026-06-11
 - P2 menu entry now launches Windows-side Electron via cmd.exe
   (WSL/WSLg Electron broke transparency and resize) — opens at

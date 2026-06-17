@@ -8,15 +8,66 @@ html, body {
   /* Prevent text selection during drag */
   user-select: none;
   -webkit-user-select: none;
+  color: #c8d4ff;
 }
 
-#c {
-  display: block;
-  width: 100%; height: 100%;
-  cursor: grab;
-  /* Required for Electron transparent window */
-  -webkit-app-region: no-drag;
+#app { display: flex; width: 100vw; height: 100vh; }
+
+/* ─── Left navigation ─────────────────────────────────────────────────────── */
+#side-nav {
+  width: 184px; flex: 0 0 184px;
+  background: rgba(10,12,20,0.98);
+  border-right: 1px solid rgba(59,91,219,0.30);
+  display: flex; flex-direction: column;
+  padding: 10px 8px; gap: 4px;
+  z-index: 100;
 }
+#brand {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; cursor: pointer;
+  color: #8ab4f8; font-family: inherit;
+  padding: 6px 8px 12px; margin-bottom: 6px;
+  border-bottom: 1px solid rgba(59,91,219,0.20);
+  text-align: left; width: 100%;
+}
+#brand .brand-mark { font-size: 20px; color: #3b5bdb; }
+#brand .brand-text { font-size: 14px; font-weight: 600; letter-spacing: .3px; }
+#brand:hover .brand-text { color: #fff; }
+
+.nav-links { display: flex; flex-direction: column; gap: 3px; }
+.nav-item {
+  background: rgba(20,22,40,0.6);
+  color: rgba(160,180,255,0.6);
+  border: 1px solid transparent;
+  padding: 7px 10px; border-radius: 5px;
+  cursor: pointer; font-size: 12.5px; font-family: inherit;
+  text-align: left; transition: background .15s, color .15s;
+}
+.nav-item:hover:not(.active) { background: rgba(40,44,80,0.8); color: rgba(200,212,255,0.85); }
+.nav-item.active { background: rgba(59,91,219,0.75); color: #fff; border-color: rgba(92,124,250,0.7); }
+
+/* Collapsible Work History project list */
+.wh-arrow { display: inline-block; width: 10px; font-size: 9px; color: rgba(150,170,225,0.8); }
+.wh-nav-list { display: flex; flex-direction: column; gap: 2px; padding: 2px 0 4px 16px; }
+.wh-nav-list.hidden { display: none; }
+.wh-nav-item {
+  background: none; border: none; color: rgba(150,170,225,0.72); cursor: pointer;
+  font-family: inherit; font-size: 11px; text-align: left;
+  padding: 3px 8px; border-radius: 4px;
+  display: flex; justify-content: space-between; gap: 8px;
+}
+.wh-nav-item:hover { background: rgba(40,44,80,0.7); color: #cdd8ff; }
+.wh-nav-item.active { background: rgba(59,91,219,0.5); color: #fff; }
+.wh-nav-count { color: rgba(140,155,200,0.7); font-variant-numeric: tabular-nums; }
+
+/* ─── Main content ────────────────────────────────────────────────────────── */
+#main { position: relative; flex: 1 1 auto; height: 100vh; overflow: hidden; }
+.view { position: absolute; inset: 0; }
+.view.hidden { display: none; }
+#view-work:not(.hidden) { display: flex; flex-direction: column; }
+#work-content { flex: 1 1 auto; overflow: auto; min-height: 0; }
+
+#c { display: block; width: 100%; height: 100%; cursor: grab; -webkit-app-region: no-drag; }
 #c.dragging { cursor: grabbing; }
 
 #tooltip {
@@ -35,54 +86,40 @@ html, body {
 }
 #tooltip.visible { opacity: 1; }
 
-/* ─── Design toggle bar ───────────────────────────────────────────────────── */
-#toggle-bar {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 36px;
+#v1-frame, #v18-frame { width: 100%; height: 100%; border: none; }
+#v18-frame { background: #07071a; }
+
+/* ─── Breadcrumbs ─────────────────────────────────────────────────────────── */
+#crumbs {
+  flex: 0 0 34px; display: flex; align-items: center; gap: 6px;
+  padding: 0 16px; font-size: 12.5px;
   background: rgba(10,12,20,0.96);
-  border-bottom: 1px solid rgba(59,91,219,0.30);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  z-index: 100;
+  border-bottom: 1px solid rgba(59,91,219,0.25);
+  color: rgba(160,180,255,0.6);
 }
-#toggle-bar button {
-  background: rgba(20,22,40,0.9);
-  color: rgba(160,180,255,0.55);
-  border: 1px solid rgba(59,91,219,0.25);
-  padding: 4px 18px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-family: inherit;
-  transition: background 0.15s, color 0.15s;
+#crumbs .crumb {
+  background: none; border: none; color: #8ab4f8; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; padding: 2px;
 }
-#toggle-bar button.active {
-  background: rgba(59,91,219,0.75);
-  color: #fff;
-  border-color: rgba(92,124,250,0.7);
-}
-#toggle-bar button:hover:not(.active) {
-  background: rgba(40,44,80,0.9);
-  color: rgba(200,212,255,0.8);
-}
+#crumbs .crumb:hover { color: #fff; text-decoration: underline; }
+#crumbs .crumb.current { color: rgba(200,212,255,0.85); cursor: default; text-decoration: none; }
+#crumbs .sep { color: rgba(120,130,170,0.6); }
 
-/* ─── View containers ─────────────────────────────────────────────────────── */
-.view {
-  position: fixed;
-  top: 36px; left: 0; right: 0; bottom: 0;
+/* ─── Work-history tables ─────────────────────────────────────────────────── */
+.wh-wrap { padding: 16px 20px 28px; }
+.wh-h { font-size: 15px; color: #cdd8ff; margin-bottom: 4px; font-weight: 600; }
+.wh-sub { font-size: 11.5px; color: rgba(150,165,210,0.7); margin-bottom: 12px; }
+table.wh { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.wh th, table.wh td { text-align: left; padding: 6px 12px; border-bottom: 1px solid rgba(59,91,219,0.14); }
+table.wh th {
+  color: rgba(150,170,230,0.85); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .5px;
+  position: sticky; top: 0; background: #0a0c14;
 }
-.view.hidden { display: none; }
-
-#v1-frame {
-  width: 100%; height: 100%;
-  border: none;
-}
-
-#v18-frame {
-  width: 100%; height: 100%;
-  border: none;
-  background: #07071a;
-}
+table.wh tbody tr.clickable { cursor: pointer; }
+table.wh tbody tr.clickable:hover { background: rgba(40,48,90,0.55); }
+table.wh td.num { text-align: right; color: rgba(180,195,240,0.9); font-variant-numeric: tabular-nums; }
+table.wh td.ver { color: rgba(150,170,225,0.85); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.wh td.date { color: rgba(150,165,210,0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wh-topic { color: #d6deff; }
+.wh-empty { color: rgba(160,170,200,0.7); padding: 20px; font-size: 13px; }
