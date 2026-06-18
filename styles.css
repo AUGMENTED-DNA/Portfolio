@@ -120,6 +120,10 @@ table.wh tbody tr.clickable { cursor: pointer; }
 table.wh tbody tr.clickable:hover { background: rgba(40,48,90,0.55); }
 table.wh td.num { text-align: right; color: rgba(180,195,240,0.9); font-variant-numeric: tabular-nums; }
 table.wh td.ver { color: rgba(150,170,225,0.85); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.wh td.topic  { color: #d6deff; }
+table.wh td.action { color: rgba(200,210,240,0.85); }
+table.wh td.status { color: rgba(150,205,170,0.92); }
+table.wh td.action, table.wh td.status { white-space: normal; }
 table.wh td.date { color: rgba(150,165,210,0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .wh-topic { color: #d6deff; }
 .wh-empty { color: rgba(160,170,200,0.7); padding: 20px; font-size: 13px; }

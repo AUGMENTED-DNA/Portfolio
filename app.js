@@ -520,9 +520,9 @@ async function showSessions(name) {
   const ver = data.version ? ' ' + data.version : '';
   const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = name + ver + ' — Work by Session';
   const sub = document.createElement('div'); sub.className = 'wh-sub';
-  const cap = data.total > data.shown ? (' (showing ' + data.shown + ' most recent of ' + data.total + ')') : '';
-  sub.textContent = data.total + ' recorded session' + (data.total === 1 ? '' : 's') + cap +
-    '. Topic is each session’s auto-generated title.';
+  sub.textContent = data.total + ' session' + (data.total === 1 ? '' : 's') + ' recorded — showing ' +
+    data.shown + ' work entr' + (data.shown === 1 ? 'y' : 'ies') +
+    ' (most recent, duplicates merged). Topic → action taken → final status.';
   wrap.append(h, sub);
   const sessions = data.sessions || [];
   if (!sessions.length) {
@@ -531,15 +531,17 @@ async function showSessions(name) {
   }
   const table = document.createElement('table'); table.className = 'wh';
   const thead = document.createElement('thead'); const htr = document.createElement('tr');
-  ['Date', 'Topic'].forEach(t => { const th = document.createElement('th'); th.textContent = t; htr.appendChild(th); });
+  ['Date', 'Topic', 'Action', 'Status'].forEach(t => { const th = document.createElement('th'); th.textContent = t; htr.appendChild(th); });
   thead.appendChild(htr); table.appendChild(thead);
   const tb = document.createElement('tbody');
   sessions.forEach(s => {
     const tr = document.createElement('tr');
-    const cTopic = document.createElement('td');
-    const sp = document.createElement('span'); sp.className = 'wh-topic'; sp.textContent = s.topic || '(untitled)';
-    cTopic.appendChild(sp);
-    tr.append(mkCell(s.date || '—', 'date'), cTopic);
+    tr.append(
+      mkCell(s.date || '—', 'date'),
+      mkCell(s.topic || '(untitled)', 'topic'),
+      mkCell(s.action || '—', 'action'),
+      mkCell(s.status || '—', 'status'),
+    );
     tb.appendChild(tr);
   });
   table.appendChild(tb); wrap.appendChild(table); workEl.replaceChildren(wrap);
