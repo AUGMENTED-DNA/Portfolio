@@ -165,15 +165,34 @@ function gitTag(repo) {
   } catch { return ''; }
 }
 
-// GET /api/work-history  ->  { projects: [{name, version, sessions, lastActive}], appVersion }
-// All canonical projects are listed (0-session ones included) so the nav count
-// always matches the display count.
-function projectList() {
-  return cached('list', () => {
+// ── Date-range filtering ──────────────────────────────────────────────────────
+// from/to are 'YYYY-MM-DD' (local time); an absent bound is open-ended. We gate
+// on each session file's mtime, which approximates when that work last happened.
+function rangeBounds(from, to) {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const lo = from ? Date.parse(from + 'T00:00:00') : -Infinity;
+  const hi = to   ? Date.parse(to   + 'T00:00:00') + dayMs : Infinity;   // inclusive end-day
+  return { lo, hi };
+}
+function filesInRange(files, b) {
+  return files.filter((f) => f.mtime >= b.lo && f.mtime < b.hi);
+}
+
+// GET /api/work-history[?from=&to=]
+//   -> { projects:[{name,version,sessions,lastActive}], appVersion, filtered, from, to }
+// With no range, every canonical project is listed (0-session ones included) so the
+// nav count matches the display count. With a range, only projects worked in that
+// window appear — this drives the left-rail "projects worked yesterday" view.
+function projectList(range) {
+  const filtered = !!(range.from || range.to);
+  const b = rangeBounds(range.from, range.to);
+  return cached(`list:${range.from || ''}:${range.to || ''}`, () => {
     const projects = [];
     for (const [name, repo] of Object.entries(NAME_TO_PATH)) {
       const dir   = sessionDirFor(repo);
-      const files = dir ? sessionFiles(dir) : [];
+      let files   = dir ? sessionFiles(dir) : [];
+      if (filtered) files = filesInRange(files, b);
+      if (filtered && !files.length) continue;          // hide projects idle in this window
       projects.push({
         name,
         version: gitTag(repo),
@@ -181,8 +200,8 @@ function projectList() {
         lastActive: files.length ? fmtDate(files[0].mtime) : '',
       });
     }
-    projects.sort((a, b) => (a.lastActive < b.lastActive ? 1 : -1));   // active first, 0-session last
-    return { projects, appVersion: gitTag(NAME_TO_PATH['Portfolio']) };
+    projects.sort((a, b2) => (a.lastActive < b2.lastActive ? 1 : -1));   // active first, 0-session last
+    return { projects, appVersion: gitTag(NAME_TO_PATH['Portfolio']), filtered, from: range.from || '', to: range.to || '' };
   });
 }
 
@@ -191,13 +210,16 @@ function projectList() {
 // Each row is Topic -> Action taken -> Final status. Duplicate session records
 // (same minute + same topic, e.g. one prompt spawning several near-empty files)
 // are collapsed to the single richest session.
-function projectSessions(name) {
-  return cached(`proj:${name}`, () => {
+function projectSessions(name, range) {
+  const filtered = !!(range.from || range.to);
+  const b = rangeBounds(range.from, range.to);
+  return cached(`proj:${name}:${range.from || ''}:${range.to || ''}`, () => {
     const repo = NAME_TO_PATH[name];
     const dir  = repo ? sessionDirFor(repo) : null;
-    const out  = { name, path: dir, version: repo ? gitTag(repo) : '', total: 0, shown: 0, sessions: [] };
+    const out  = { name, path: dir, version: repo ? gitTag(repo) : '', total: 0, shown: 0, sessions: [], filtered, from: range.from || '', to: range.to || '' };
     if (!dir) return out;
-    const files = sessionFiles(dir);
+    let files = sessionFiles(dir);
+    if (filtered) files = filesInRange(files, b);
     out.total = files.length;
     const top = files.slice(0, SESSION_CAP).map((f) => ({ ...f, topic: sessionTopic(f.file, f.id) }));
 
@@ -231,8 +253,9 @@ http.createServer((req, res) => {
 
   // JSON API: session-records work history. Early-return before static files.
   if (u.pathname === '/api/work-history') {
-    const name = decodeURIComponent(u.searchParams.get('project') || '');
-    const payload = name ? projectSessions(name) : projectList();
+    const name  = decodeURIComponent(u.searchParams.get('project') || '');
+    const range = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '' };
+    const payload = name ? projectSessions(name, range) : projectList(range);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(payload));
     return;

@@ -431,7 +431,7 @@ document.getElementById('brand').addEventListener('click', () => showView('v17')
 // Populate the collapsible project list under Work History + set version badges.
 async function buildNav() {
   let data;
-  try { data = await (await fetch('/api/work-history')).json(); } catch { return; }
+  try { data = await (await fetch(whUrl())).json(); } catch { return; }
   if (data.appVersion) {
     const bt = document.querySelector('#brand .brand-text');
     if (bt) bt.textContent = 'PAI Portfolio ' + data.appVersion;
@@ -446,6 +446,106 @@ async function buildNav() {
     whNavList.appendChild(b);
   });
 }
+// ─── Date-range filter (top of Work History) ────────────────────────────────────
+const whRange = { from: '', to: '', preset: 'all' };
+let whCurrent = null;                       // selected project, or null on the overview
+
+const _pad = (n) => String(n).padStart(2, '0');
+const _ymd = (d) => `${d.getFullYear()}-${_pad(d.getMonth() + 1)}-${_pad(d.getDate())}`;
+function presetRange(key) {
+  const now = new Date();
+  const today = _ymd(now);
+  const back = (n) => { const d = new Date(now); d.setDate(d.getDate() - n); return _ymd(d); };
+  switch (key) {
+    case 'today':     return { from: today,    to: today };
+    case 'yesterday': return { from: back(1),  to: back(1) };
+    case '7':         return { from: back(6),  to: today };
+    case '30':        return { from: back(29), to: today };
+    default:          return { from: '', to: '' };          // all time
+  }
+}
+function whUrl(project) {
+  const p = [];
+  if (project)      p.push('project=' + encodeURIComponent(project));
+  if (whRange.from) p.push('from=' + whRange.from);
+  if (whRange.to)   p.push('to='   + whRange.to);
+  return '/api/work-history' + (p.length ? '?' + p.join('&') : '');
+}
+
+const WH_PRESETS = [['all', 'All'], ['today', 'Today'], ['yesterday', 'Yesterday'], ['7', 'Last 7 days'], ['30', 'Last 30 days']];
+let whFilterBar = null;
+function injectFilterStyles() {
+  if (document.getElementById('wh-filter-styles')) return;
+  const st = document.createElement('style'); st.id = 'wh-filter-styles';
+  st.textContent =
+    '#wh-filter{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 16px;' +
+    'border-bottom:1px solid rgba(59,91,219,0.25);background:rgba(10,12,20,0.96);font-size:12px;}' +
+    '#wh-filter .wh-f-label{color:rgba(150,165,210,0.7);}' +
+    '#wh-filter button.wh-f-preset{background:rgba(20,22,40,0.9);color:rgba(170,185,255,0.7);' +
+    'border:1px solid rgba(59,91,219,0.25);border-radius:4px;padding:3px 10px;cursor:pointer;font:inherit;}' +
+    '#wh-filter button.wh-f-preset.active{background:rgba(59,91,219,0.78);color:#fff;border-color:rgba(92,124,250,0.7);}' +
+    '#wh-filter button.wh-f-preset:hover:not(.active){background:rgba(40,44,80,0.9);color:#cdd8ff;}' +
+    '#wh-filter input[type=date]{background:rgba(20,22,40,0.9);color:#cdd8ff;border:1px solid rgba(59,91,219,0.25);' +
+    'border-radius:4px;padding:2px 6px;font:inherit;color-scheme:dark;}' +
+    '#wh-filter .wh-f-sep{color:rgba(120,130,170,0.6);}' +
+    '#wh-filter .wh-f-spacer{flex:1;}' +
+    '#wh-filter .wh-f-summary{color:rgba(150,165,210,0.6);font-size:11px;white-space:nowrap;}';
+  document.head.appendChild(st);
+}
+function setActivePreset(key) {
+  whFilterBar?.querySelectorAll('button.wh-f-preset[data-preset]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.preset === key));
+}
+function updateFilterUI() {
+  const s = document.getElementById('wh-f-summary');
+  if (s) s.textContent = (whRange.from || whRange.to)
+    ? 'showing ' + (whRange.from || '…') + ' → ' + (whRange.to || '…')
+    : 'showing all time';
+  const fI = document.getElementById('wh-from'), tI = document.getElementById('wh-to');
+  if (fI) fI.value = whRange.from;
+  if (tI) tI.value = whRange.to;
+}
+async function reloadWork() {
+  await buildNav();
+  if (whCurrent) await showSessions(whCurrent); else await showProjects();
+}
+async function applyPreset(key) {
+  const r = presetRange(key);
+  whRange.from = r.from; whRange.to = r.to; whRange.preset = key;
+  setActivePreset(key); updateFilterUI(); await reloadWork();
+}
+async function applyCustom() {
+  const fI = document.getElementById('wh-from'), tI = document.getElementById('wh-to');
+  whRange.from = (fI && fI.value) || ''; whRange.to = (tI && tI.value) || ''; whRange.preset = 'custom';
+  setActivePreset(null); updateFilterUI(); await reloadWork();
+}
+function ensureFilterBar() {
+  if (whFilterBar) return;
+  const bar = document.createElement('div'); bar.id = 'wh-filter';
+  const lbl = document.createElement('span'); lbl.className = 'wh-f-label'; lbl.textContent = 'Date:';
+  bar.appendChild(lbl);
+  WH_PRESETS.forEach(([key, label]) => {
+    const b = document.createElement('button'); b.className = 'wh-f-preset'; b.dataset.preset = key; b.textContent = label;
+    b.addEventListener('click', () => applyPreset(key));
+    bar.appendChild(b);
+  });
+  const dot = document.createElement('span'); dot.className = 'wh-f-sep'; dot.textContent = '·'; bar.appendChild(dot);
+  const fromI = document.createElement('input'); fromI.type = 'date'; fromI.id = 'wh-from'; fromI.title = 'From date';
+  const arrow = document.createElement('span'); arrow.className = 'wh-f-sep'; arrow.textContent = '→';
+  const toI = document.createElement('input'); toI.type = 'date'; toI.id = 'wh-to'; toI.title = 'To date';
+  const go = document.createElement('button'); go.className = 'wh-f-preset'; go.textContent = 'Apply';
+  go.addEventListener('click', applyCustom);
+  bar.append(fromI, arrow, toI, go);
+  const spacer = document.createElement('span'); spacer.className = 'wh-f-spacer'; bar.appendChild(spacer);
+  const summary = document.createElement('span'); summary.className = 'wh-f-summary'; summary.id = 'wh-f-summary';
+  bar.appendChild(summary);
+  const view = document.getElementById('view-work');
+  view.insertBefore(bar, view.firstChild);
+  whFilterBar = bar;
+  setActivePreset('all'); updateFilterUI();
+}
+
+ensureFilterBar();
 buildNav();
 
 // ─── Work History (session records, tabular) ────────────────────────────────────
@@ -474,20 +574,25 @@ function mkCell(text, cls) {
 }
 
 async function showProjects() {
+  whCurrent = null;
   setCrumbs([{ label: 'Home', onClick: () => showView('v17') }, { label: 'Work History', onClick: null }]);
   workMsg('Loading projects…');
   let data;
-  try { data = await (await fetch('/api/work-history')).json(); }
+  try { data = await (await fetch(whUrl())).json(); }
   catch (e) { workMsg('Could not load work history.'); return; }
   const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
   const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = 'Work History by Project';
   const sub = document.createElement('div'); sub.className = 'wh-sub';
   const n = (data.projects || []).length;
-  sub.textContent = n + ' project' + (n === 1 ? '' : 's') +
-    ' with recorded Claude sessions — click one to see its work by topic & session.';
+  const rangeNote = data.filtered
+    ? ' worked between ' + (data.from || '…') + ' and ' + (data.to || '…')
+    : ' with recorded Claude sessions';
+  sub.textContent = n + ' project' + (n === 1 ? '' : 's') + rangeNote +
+    ' — click one to see its work by topic & session.';
   wrap.append(h, sub);
   if (!n) {
-    const e = document.createElement('div'); e.className = 'wh-empty'; e.textContent = 'No session records found.';
+    const e = document.createElement('div'); e.className = 'wh-empty';
+    e.textContent = data.filtered ? 'No projects were worked in this date range.' : 'No session records found.';
     wrap.append(e); workEl.replaceChildren(wrap); return;
   }
   const table = document.createElement('table'); table.className = 'wh';
@@ -507,6 +612,7 @@ async function showProjects() {
 }
 
 async function showSessions(name) {
+  whCurrent = name;
   setCrumbs([
     { label: 'Home', onClick: () => showView('v17') },
     { label: 'Work History', onClick: showProjects },
@@ -514,7 +620,7 @@ async function showSessions(name) {
   ]);
   workMsg('Loading ' + name + ' sessions…');
   let data;
-  try { data = await (await fetch('/api/work-history?project=' + encodeURIComponent(name))).json(); }
+  try { data = await (await fetch(whUrl(name))).json(); }
   catch (e) { workMsg('Could not load sessions for ' + name + '.'); return; }
   const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
   const ver = data.version ? ' ' + data.version : '';
