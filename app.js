@@ -430,7 +430,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => showView(btn.dataset.target));
 });
 let _whClickTimer = null;
-document.getElementById('nav-work').addEventListener('click', () => {
+document.getElementById('nav-work')?.addEventListener('click', () => {
   showView('work'); setWhExpanded(true); workMsg('Loading…');
   if (_whClickTimer) {                       // second click within window → all-projects
     clearTimeout(_whClickTimer); _whClickTimer = null;
@@ -446,7 +446,7 @@ whArrow?.addEventListener('click', (e) => {
   e.stopPropagation();
   setWhExpanded(whNavList.classList.contains('hidden'));
 });
-document.getElementById('brand').addEventListener('click', () => showView('v17'));
+document.getElementById('brand')?.addEventListener('click', () => showView('v17'));
 
 // Populate the collapsible project list under Work History + set version badges.
 async function buildNav() {
@@ -573,8 +573,9 @@ function ensureFilterBar() {
   setActivePreset('all'); setActiveLevel(whLevel); updateFilterUI();
 }
 
-ensureFilterBar();
-buildNav();
+// Only wire the launcher's nav + Work History when its shell is present.
+// v18.html also loads app.js (for the orbital canvas) but has no nav shell.
+if (whNavList) { ensureFilterBar(); buildNav(); }
 
 // ─── Work History (session records, tabular) ────────────────────────────────────
 const workEl = document.getElementById('work-content');
