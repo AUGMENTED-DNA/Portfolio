@@ -474,24 +474,6 @@ function whUrl(project) {
 
 const WH_PRESETS = [['all', 'All'], ['today', 'Today'], ['yesterday', 'Yesterday'], ['7', 'Last 7 days'], ['30', 'Last 30 days']];
 let whFilterBar = null;
-function injectFilterStyles() {
-  if (document.getElementById('wh-filter-styles')) return;
-  const st = document.createElement('style'); st.id = 'wh-filter-styles';
-  st.textContent =
-    '#wh-filter{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 16px;' +
-    'border-bottom:1px solid rgba(59,91,219,0.25);background:rgba(10,12,20,0.96);font-size:12px;}' +
-    '#wh-filter .wh-f-label{color:rgba(150,165,210,0.7);}' +
-    '#wh-filter button.wh-f-preset{background:rgba(20,22,40,0.9);color:rgba(170,185,255,0.7);' +
-    'border:1px solid rgba(59,91,219,0.25);border-radius:4px;padding:3px 10px;cursor:pointer;font:inherit;}' +
-    '#wh-filter button.wh-f-preset.active{background:rgba(59,91,219,0.78);color:#fff;border-color:rgba(92,124,250,0.7);}' +
-    '#wh-filter button.wh-f-preset:hover:not(.active){background:rgba(40,44,80,0.9);color:#cdd8ff;}' +
-    '#wh-filter input[type=date]{background:rgba(20,22,40,0.9);color:#cdd8ff;border:1px solid rgba(59,91,219,0.25);' +
-    'border-radius:4px;padding:2px 6px;font:inherit;color-scheme:dark;}' +
-    '#wh-filter .wh-f-sep{color:rgba(120,130,170,0.6);}' +
-    '#wh-filter .wh-f-spacer{flex:1;}' +
-    '#wh-filter .wh-f-summary{color:rgba(150,165,210,0.6);font-size:11px;white-space:nowrap;}';
-  document.head.appendChild(st);
-}
 function setActivePreset(key) {
   whFilterBar?.querySelectorAll('button.wh-f-preset[data-preset]').forEach((b) =>
     b.classList.toggle('active', b.dataset.preset === key));
