@@ -240,11 +240,39 @@ function projectSessions(name, range) {
         topic: f.topic,
         action: sessionAction(f.file),
         status: sessionStatus(f.file),
+        committed: sessionCommitted(f.file),
         id: f.id,
       }))
       .filter((r) => r.action && r.action.length > 3 && !META.test(r.action));
     out.shown = out.sessions.length;
     return out;
+  });
+}
+
+// The session's commit line if any ("…Committed … v3.2 …"); '' otherwise.
+function sessionCommitted(file) {
+  const lines = grepAll(file, 'Committed', false);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = msgText(lines[i]).match(/Committed[^.]*?v\d+\.\d+[^.]*/i);
+    if (m) return clip(m[0], 160);
+  }
+  return '';
+}
+
+// GET /api/work-history?scope=all[&from=&to=]  → every project's sessions,
+// each row tagged with its project + version, newest first, capped at 300.
+function allProjects(range) {
+  return cached(`all:${range.from || ''}:${range.to || ''}`, () => {
+    const filtered = !!(range.from || range.to);
+    const rows = [];
+    for (const name of Object.keys(NAME_TO_PATH)) {
+      const ps = projectSessions(name, range);
+      for (const s of ps.sessions) rows.push({ ...s, project: name, version: ps.version });
+    }
+    rows.sort((a, b) => (a.date < b.date ? 1 : -1));   // newest first
+    const shown = rows.slice(0, 300);
+    return { scope: 'all', filtered, from: range.from || '', to: range.to || '',
+             total: rows.length, shown: shown.length, sessions: shown };
   });
 }
 
@@ -255,7 +283,10 @@ http.createServer((req, res) => {
   if (u.pathname === '/api/work-history') {
     const name  = decodeURIComponent(u.searchParams.get('project') || '');
     const range = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '' };
-    const payload = name ? projectSessions(name, range) : projectList(range);
+    const scope = u.searchParams.get('scope') || '';
+    const payload = scope === 'all' ? allProjects(range)
+                  : name            ? projectSessions(name, range)
+                  :                   projectList(range);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(payload));
     return;

@@ -417,11 +417,31 @@ function setWhExpanded(exp) {
   whNavList.classList.toggle('hidden', !exp);
   if (whArrow) whArrow.textContent = exp ? '▾' : '▸';
 }
-document.querySelectorAll('.nav-item').forEach(btn =>
-  btn.addEventListener('click', () => {
-    showView(btn.dataset.target);
-    if (btn.dataset.target === 'work') { setWhExpanded(true); showProjects(); }
-  }));
+// Plain nav items just switch views. Work History gets a single/double-click
+// scope toggle: one click = white folder + by-project overview; two quick
+// clicks = green folder + all-projects detail.
+const whFolderEl = document.getElementById('wh-folder');
+function setFolderScope(scope) {
+  whScope = scope;
+  if (whFolderEl) { whFolderEl.classList.toggle('all', scope === 'all'); whFolderEl.textContent = scope === 'all' ? '🗁' : '🗀'; }
+}
+document.querySelectorAll('.nav-item').forEach(btn => {
+  if (btn.id === 'nav-work') return;        // handled separately below
+  btn.addEventListener('click', () => showView(btn.dataset.target));
+});
+let _whClickTimer = null;
+document.getElementById('nav-work').addEventListener('click', () => {
+  showView('work'); setWhExpanded(true); workMsg('Loading…');
+  if (_whClickTimer) {                       // second click within window → all-projects
+    clearTimeout(_whClickTimer); _whClickTimer = null;
+    setFolderScope('all'); showAllProjects();
+  } else {
+    _whClickTimer = setTimeout(() => {       // settled as a single click → by-project
+      _whClickTimer = null;
+      setFolderScope('project'); showProjects();
+    }, 280);
+  }
+});
 whArrow?.addEventListener('click', (e) => {
   e.stopPropagation();
   setWhExpanded(whNavList.classList.contains('hidden'));
@@ -431,7 +451,7 @@ document.getElementById('brand').addEventListener('click', () => showView('v17')
 // Populate the collapsible project list under Work History + set version badges.
 async function buildNav() {
   let data;
-  try { data = await (await fetch(whUrl())).json(); } catch { return; }
+  try { data = await (await fetch(whApi())).json(); } catch { return; }
   if (data.appVersion) {
     const bt = document.querySelector('#brand .brand-text');
     if (bt) bt.textContent = 'PAI Portfolio ' + data.appVersion;
@@ -449,6 +469,8 @@ async function buildNav() {
 // ─── Date-range filter (top of Work History) ────────────────────────────────────
 const whRange = { from: '', to: '', preset: 'all' };
 let whCurrent = null;                       // selected project, or null on the overview
+let whScope   = 'project';                  // 'project' = white folder · 'all' = green folder
+let whLevel   = 'transactional';            // 'transactional' | 'functional' | 'summary'
 
 const _pad = (n) => String(n).padStart(2, '0');
 const _ymd = (d) => `${d.getFullYear()}-${_pad(d.getMonth() + 1)}-${_pad(d.getDate())}`;
@@ -464,11 +486,13 @@ function presetRange(key) {
     default:          return { from: '', to: '' };          // all time
   }
 }
-function whUrl(project) {
+function whApi(opts) {
+  const o = opts || {};
   const p = [];
-  if (project)      p.push('project=' + encodeURIComponent(project));
-  if (whRange.from) p.push('from=' + whRange.from);
-  if (whRange.to)   p.push('to='   + whRange.to);
+  if (o.project)              p.push('project=' + encodeURIComponent(o.project));
+  else if (o.scope === 'all') p.push('scope=all');
+  if (whRange.from)           p.push('from=' + whRange.from);
+  if (whRange.to)             p.push('to='   + whRange.to);
   return '/api/work-history' + (p.length ? '?' + p.join('&') : '');
 }
 
@@ -489,7 +513,9 @@ function updateFilterUI() {
 }
 async function reloadWork() {
   await buildNav();
-  if (whCurrent) await showSessions(whCurrent); else await showProjects();
+  if (whCurrent) await showSessions(whCurrent);
+  else if (whScope === 'all') await showAllProjects();
+  else await showProjects();
 }
 async function applyPreset(key) {
   const r = presetRange(key);
@@ -500,6 +526,19 @@ async function applyCustom() {
   const fI = document.getElementById('wh-from'), tI = document.getElementById('wh-to');
   whRange.from = (fI && fI.value) || ''; whRange.to = (tI && tI.value) || ''; whRange.preset = 'custom';
   setActivePreset(null); updateFilterUI(); await reloadWork();
+}
+// ─── Detail-level toggle (Transactional / Detail Functional / Functional Summary) ─
+const WH_LEVELS = [['transactional', 'Transactional'], ['functional', 'Detail Functional'], ['summary', 'Functional Summary']];
+const WH_LEVEL_NAME = { transactional: 'Transactional', functional: 'Detail Functional', summary: 'Functional Summary' };
+function setActiveLevel(key) {
+  whFilterBar?.querySelectorAll('button.wh-f-level[data-level]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.level === key));
+}
+async function applyLevel(key) {
+  whLevel = key; setActiveLevel(key);
+  if (whCurrent) await showSessions(whCurrent);
+  else if (whScope === 'all') await showAllProjects();
+  else await showProjects();
 }
 function ensureFilterBar() {
   if (whFilterBar) return;
@@ -518,13 +557,20 @@ function ensureFilterBar() {
   const go = document.createElement('button'); go.className = 'wh-f-preset'; go.textContent = 'Apply';
   go.addEventListener('click', applyCustom);
   bar.append(fromI, arrow, toI, go);
+  const lvlSep = document.createElement('span'); lvlSep.className = 'wh-f-sep'; lvlSep.textContent = '·'; bar.appendChild(lvlSep);
+  const lvlLbl = document.createElement('span'); lvlLbl.className = 'wh-f-label'; lvlLbl.textContent = 'Detail:'; bar.appendChild(lvlLbl);
+  WH_LEVELS.forEach(([key, label]) => {
+    const b = document.createElement('button'); b.className = 'wh-f-level'; b.dataset.level = key; b.textContent = label;
+    b.addEventListener('click', () => applyLevel(key));
+    bar.appendChild(b);
+  });
   const spacer = document.createElement('span'); spacer.className = 'wh-f-spacer'; bar.appendChild(spacer);
   const summary = document.createElement('span'); summary.className = 'wh-f-summary'; summary.id = 'wh-f-summary';
   bar.appendChild(summary);
   const view = document.getElementById('view-work');
   view.insertBefore(bar, view.firstChild);
   whFilterBar = bar;
-  setActivePreset('all'); updateFilterUI();
+  setActivePreset('all'); setActiveLevel(whLevel); updateFilterUI();
 }
 
 ensureFilterBar();
@@ -560,7 +606,7 @@ async function showProjects() {
   setCrumbs([{ label: 'Home', onClick: () => showView('v17') }, { label: 'Work History', onClick: null }]);
   workMsg('Loading projects…');
   let data;
-  try { data = await (await fetch(whUrl())).json(); }
+  try { data = await (await fetch(whApi())).json(); }
   catch (e) { workMsg('Could not load work history.'); return; }
   const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
   const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = 'Work History by Project';
@@ -602,7 +648,7 @@ async function showSessions(name) {
   ]);
   workMsg('Loading ' + name + ' sessions…');
   let data;
-  try { data = await (await fetch(whUrl(name))).json(); }
+  try { data = await (await fetch(whApi({ project: name }))).json(); }
   catch (e) { workMsg('Could not load sessions for ' + name + '.'); return; }
   const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
   const ver = data.version ? ' ' + data.version : '';
@@ -610,29 +656,91 @@ async function showSessions(name) {
   const sub = document.createElement('div'); sub.className = 'wh-sub';
   sub.textContent = data.total + ' session' + (data.total === 1 ? '' : 's') + ' recorded — showing ' +
     data.shown + ' work entr' + (data.shown === 1 ? 'y' : 'ies') +
-    ' (most recent, duplicates merged). Topic → action taken → final status.';
+    ' (duplicates merged) · ' + WH_LEVEL_NAME[whLevel] + ' view.';
   wrap.append(h, sub);
   const sessions = data.sessions || [];
   if (!sessions.length) {
     const e = document.createElement('div'); e.className = 'wh-empty'; e.textContent = 'No sessions found for this project.';
     wrap.append(e); workEl.replaceChildren(wrap); return;
   }
+  wrap.appendChild(renderSessionTable(sessions, false));
+  workEl.replaceChildren(wrap);
+}
+
+// ─── All-projects detail view (green folder) + shared level-aware renderer ────
+async function showAllProjects() {
+  whCurrent = null; setFolderScope('all');
+  setCrumbs([{ label: 'Home', onClick: () => showView('v17') }, { label: 'Work History — All Projects', onClick: null }]);
+  workMsg('Loading all projects…');
+  let data;
+  try { data = await (await fetch(whApi({ scope: 'all' }))).json(); }
+  catch (e) { workMsg('Could not load all-projects work history.'); return; }
+  const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
+  const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = 'Work History — All Projects';
+  const sub = document.createElement('div'); sub.className = 'wh-sub';
+  const rangeNote = data.filtered ? (data.from || '…') + ' → ' + (data.to || '…') : 'all time';
+  sub.textContent = data.shown + ' of ' + data.total + ' work entr' + (data.total === 1 ? 'y' : 'ies') +
+    ' across all projects · ' + rangeNote + ' · ' + WH_LEVEL_NAME[whLevel] + ' view.';
+  wrap.append(h, sub);
+  const sessions = data.sessions || [];
+  if (!sessions.length) {
+    const e = document.createElement('div'); e.className = 'wh-empty';
+    e.textContent = data.filtered ? 'No work recorded in this date range.' : 'No session records found.';
+    wrap.append(e); workEl.replaceChildren(wrap); return;
+  }
+  wrap.appendChild(renderSessionTable(sessions, true));
+  workEl.replaceChildren(wrap);
+}
+
+// Column set per detail level. Project column only in all-projects scope.
+function sessionCols(level, showProject) {
+  const cols = [{ key: 'date', label: 'Date', cls: 'date' }];
+  if (showProject) cols.push({ key: 'project', label: 'Project', cls: 'wh-proj' });
+  cols.push({ key: 'session', label: 'Session', cls: 'wh-sess' });
+  if (level === 'summary') {
+    cols.push({ key: 'action', label: 'Requested', cls: 'action' });
+    cols.push({ key: 'status', label: 'Delivered', cls: 'status' });
+  } else {
+    cols.push({ key: 'action', label: 'Action', cls: 'action' });
+    cols.push({ key: 'status', label: 'Status', cls: 'status' });
+    if (level === 'transactional') cols.push({ key: 'committed', label: 'Committed', cls: 'wh-commit' });
+  }
+  return cols;
+}
+// A Session cell: 8-char session id (mono, dim) above the session title.
+function mkSessionCell(s) {
+  const td = document.createElement('td'); td.className = 'wh-sess';
+  const idEl = document.createElement('div'); idEl.className = 'wh-sess-id'; idEl.textContent = (s.id || '').slice(0, 8) || '—';
+  const tEl = document.createElement('div'); tEl.className = 'wh-sess-title'; tEl.textContent = s.topic || '(untitled)';
+  td.append(idEl, tEl); return td;
+}
+// Shared renderer for session detail rows, honoring the current detail level.
+function renderSessionTable(sessions, showProject) {
+  const cols = sessionCols(whLevel, showProject);
   const table = document.createElement('table'); table.className = 'wh';
   const thead = document.createElement('thead'); const htr = document.createElement('tr');
-  ['Date', 'Topic', 'Action', 'Status'].forEach(t => { const th = document.createElement('th'); th.textContent = t; htr.appendChild(th); });
+  cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.label; htr.appendChild(th); });
   thead.appendChild(htr); table.appendChild(thead);
   const tb = document.createElement('tbody');
   sessions.forEach(s => {
     const tr = document.createElement('tr');
-    tr.append(
-      mkCell(s.date || '—', 'date'),
-      mkCell(s.topic || '(untitled)', 'topic'),
-      mkCell(s.action || '—', 'action'),
-      mkCell(s.status || '—', 'status'),
-    );
+    cols.forEach(c => {
+      if (c.key === 'session') { tr.appendChild(mkSessionCell(s)); return; }
+      let v;
+      switch (c.key) {
+        case 'date':      v = s.date || '—'; break;
+        case 'project':   v = s.project || '—'; break;
+        case 'action':    v = s.action || '—'; break;
+        case 'status':    v = s.status || '—'; break;
+        case 'committed': v = s.committed || '—'; break;
+        default:          v = '—';
+      }
+      tr.appendChild(mkCell(v, c.cls));
+    });
     tb.appendChild(tr);
   });
-  table.appendChild(tb); wrap.appendChild(table); workEl.replaceChildren(wrap);
+  table.appendChild(tb);
+  return table;
 }
 
 // ─── Window controls (Electron only) ─────────────────────────────────────────
