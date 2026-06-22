@@ -470,7 +470,8 @@ async function buildNav() {
 const whRange = { from: '', to: '', preset: 'all' };
 let whCurrent = null;                       // selected project, or null on the overview
 let whScope   = 'project';                  // 'project' = white folder · 'all' = green folder
-let whLevel   = 'transactional';            // 'transactional' | 'functional' | 'summary'
+let whEffortId    = null;                   // drilled-into work effort (null = on the roll-up list)
+let whEffortLevel = 'functional';           // within an effort: 'functional' (L2) | 'raw' (L1)
 
 const _pad = (n) => String(n).padStart(2, '0');
 const _ymd = (d) => `${d.getFullYear()}-${_pad(d.getMonth() + 1)}-${_pad(d.getDate())}`;
@@ -527,18 +528,26 @@ async function applyCustom() {
   whRange.from = (fI && fI.value) || ''; whRange.to = (tI && tI.value) || ''; whRange.preset = 'custom';
   setActivePreset(null); updateFilterUI(); await reloadWork();
 }
-// ─── Detail-level toggle (Transactional / Detail Functional / Functional Summary) ─
-const WH_LEVELS = [['transactional', 'Transactional'], ['functional', 'Detail Functional'], ['summary', 'Functional Summary']];
-const WH_LEVEL_NAME = { transactional: 'Transactional', functional: 'Detail Functional', summary: 'Functional Summary' };
+// ─── Level control: Roll-Up (list) ▸ Functional Items ▸ Raw (drill within effort) ─
+const WH_LEVELS = [['rollup', 'Roll-Up'], ['functional', 'Functional Items'], ['raw', 'Raw']];
 function setActiveLevel(key) {
   whFilterBar?.querySelectorAll('button.wh-f-level[data-level]').forEach((b) =>
     b.classList.toggle('active', b.dataset.level === key));
 }
+// Most-recent effort in the current list context (for level jumps with no row click).
+async function firstEffortId() {
+  if (!whCurrent && whScope !== 'all') return null;     // project overview has no single effort list
+  try {
+    const url = whCurrent ? whApi({ project: whCurrent }) : whApi({ scope: 'all' });
+    const d = await (await fetch(url)).json();
+    return (d.sessions && d.sessions[0] && d.sessions[0].id) || null;
+  } catch { return null; }
+}
 async function applyLevel(key) {
-  whLevel = key; setActiveLevel(key);
-  if (whCurrent) await showSessions(whCurrent);
-  else if (whScope === 'all') await showAllProjects();
-  else await showProjects();
+  if (key === 'rollup') { whEffortId = null; setActiveLevel('rollup'); await reloadWork(); return; }
+  const id = whEffortId || await firstEffortId();
+  if (!id) { setActiveLevel('rollup'); return; }          // nothing to drill into
+  whEffortLevel = key; await showEffort(id, key);
 }
 function ensureFilterBar() {
   if (whFilterBar) return;
@@ -558,7 +567,7 @@ function ensureFilterBar() {
   go.addEventListener('click', applyCustom);
   bar.append(fromI, arrow, toI, go);
   const lvlSep = document.createElement('span'); lvlSep.className = 'wh-f-sep'; lvlSep.textContent = '·'; bar.appendChild(lvlSep);
-  const lvlLbl = document.createElement('span'); lvlLbl.className = 'wh-f-label'; lvlLbl.textContent = 'Detail:'; bar.appendChild(lvlLbl);
+  const lvlLbl = document.createElement('span'); lvlLbl.className = 'wh-f-label'; lvlLbl.textContent = 'View:'; bar.appendChild(lvlLbl);
   WH_LEVELS.forEach(([key, label]) => {
     const b = document.createElement('button'); b.className = 'wh-f-level'; b.dataset.level = key; b.textContent = label;
     b.addEventListener('click', () => applyLevel(key));
@@ -570,7 +579,7 @@ function ensureFilterBar() {
   const view = document.getElementById('view-work');
   view.insertBefore(bar, view.firstChild);
   whFilterBar = bar;
-  setActivePreset('all'); setActiveLevel(whLevel); updateFilterUI();
+  setActivePreset('all'); setActiveLevel('rollup'); updateFilterUI();
 }
 
 // Only wire the launcher's nav + Work History when its shell is present.
@@ -641,7 +650,7 @@ async function showProjects() {
 }
 
 async function showSessions(name) {
-  whCurrent = name;
+  whCurrent = name; whEffortId = null; setActiveLevel('rollup');
   setCrumbs([
     { label: 'Home', onClick: () => showView('v17') },
     { label: 'Work History', onClick: showProjects },
@@ -653,24 +662,23 @@ async function showSessions(name) {
   catch (e) { workMsg('Could not load sessions for ' + name + '.'); return; }
   const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
   const ver = data.version ? ' ' + data.version : '';
-  const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = name + ver + ' — Work by Session';
+  const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = name + ver + ' — Work-Effort Roll-Up';
   const sub = document.createElement('div'); sub.className = 'wh-sub';
-  sub.textContent = data.total + ' session' + (data.total === 1 ? '' : 's') + ' recorded — showing ' +
-    data.shown + ' work entr' + (data.shown === 1 ? 'y' : 'ies') +
-    ' (duplicates merged) · ' + WH_LEVEL_NAME[whLevel] + ' view.';
+  sub.textContent = data.total + ' work effort' + (data.total === 1 ? '' : 's') + ' recorded — showing ' +
+    data.shown + ' · click a row to drill into its functional items and raw exchanges.';
   wrap.append(h, sub);
   const sessions = data.sessions || [];
   if (!sessions.length) {
-    const e = document.createElement('div'); e.className = 'wh-empty'; e.textContent = 'No sessions found for this project.';
+    const e = document.createElement('div'); e.className = 'wh-empty'; e.textContent = 'No work efforts found for this project.';
     wrap.append(e); workEl.replaceChildren(wrap); return;
   }
-  wrap.appendChild(renderSessionTable(sessions, false));
+  wrap.appendChild(renderRollupTable(sessions, false));
   workEl.replaceChildren(wrap);
 }
 
-// ─── All-projects detail view (green folder) + shared level-aware renderer ────
+// ─── All-projects roll-up (green folder) ──────────────────────────────────────
 async function showAllProjects() {
-  whCurrent = null; setFolderScope('all');
+  whCurrent = null; whEffortId = null; setActiveLevel('rollup'); setFolderScope('all');
   setCrumbs([{ label: 'Home', onClick: () => showView('v17') }, { label: 'Work History — All Projects', onClick: null }]);
   workMsg('Loading all projects…');
   let data;
@@ -680,8 +688,8 @@ async function showAllProjects() {
   const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = 'Work History — All Projects';
   const sub = document.createElement('div'); sub.className = 'wh-sub';
   const rangeNote = data.filtered ? (data.from || '…') + ' → ' + (data.to || '…') : 'all time';
-  sub.textContent = data.shown + ' of ' + data.total + ' work entr' + (data.total === 1 ? 'y' : 'ies') +
-    ' across all projects · ' + rangeNote + ' · ' + WH_LEVEL_NAME[whLevel] + ' view.';
+  sub.textContent = data.shown + ' of ' + data.total + ' work effort' + (data.total === 1 ? '' : 's') +
+    ' across all projects · ' + rangeNote + ' · click a row to drill in.';
   wrap.append(h, sub);
   const sessions = data.sessions || [];
   if (!sessions.length) {
@@ -689,24 +697,18 @@ async function showAllProjects() {
     e.textContent = data.filtered ? 'No work recorded in this date range.' : 'No session records found.';
     wrap.append(e); workEl.replaceChildren(wrap); return;
   }
-  wrap.appendChild(renderSessionTable(sessions, true));
+  wrap.appendChild(renderRollupTable(sessions, true));
   workEl.replaceChildren(wrap);
 }
 
-// Column set per detail level. Project column only in all-projects scope.
-function sessionCols(level, showProject) {
-  const cols = [{ key: 'date', label: 'Date', cls: 'date' }];
-  if (showProject) cols.push({ key: 'project', label: 'Project', cls: 'wh-proj' });
-  cols.push({ key: 'session', label: 'Session', cls: 'wh-sess' });
-  if (level === 'summary') {
-    cols.push({ key: 'action', label: 'Requested', cls: 'action' });
-    cols.push({ key: 'status', label: 'Delivered', cls: 'status' });
-  } else {
-    cols.push({ key: 'action', label: 'Action', cls: 'action' });
-    cols.push({ key: 'status', label: 'Status', cls: 'status' });
-    if (level === 'transactional') cols.push({ key: 'committed', label: 'Committed', cls: 'wh-commit' });
-  }
-  return cols;
+// ─── Level 3: roll-up table (one row per work effort) ─────────────────────────
+const clipText = (s, n) => { s = (s || '').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
+function evalBadge(s) {
+  const span = document.createElement('span'); const ok = s.eval_ok;
+  span.className = 'wh-eval ' + (ok === 1 ? 'ok' : ok === 0 ? 'bad' : 'none');
+  span.textContent = ok === 1 ? '✅ Complete' : ok === 0 ? '⚠️ Incomplete' : '— No verdict';
+  span.title = s.evaluation || '';
+  return span;
 }
 // A Session cell: 8-char session id (mono, dim) above the session title.
 function mkSessionCell(s) {
@@ -715,33 +717,125 @@ function mkSessionCell(s) {
   const tEl = document.createElement('div'); tEl.className = 'wh-sess-title'; tEl.textContent = s.topic || '(untitled)';
   td.append(idEl, tEl); return td;
 }
-// Shared renderer for session detail rows, honoring the current detail level.
-function renderSessionTable(sessions, showProject) {
-  const cols = sessionCols(whLevel, showProject);
+// Level-3 roll-up: Date · [Project] · Session · Requested · Produced · Evaluation.
+function renderRollupTable(sessions, showProject) {
+  const cols = [{ key: 'date', label: 'Date', cls: 'date' }];
+  if (showProject) cols.push({ key: 'project', label: 'Project', cls: 'wh-proj' });
+  cols.push({ key: 'session',   label: 'Session',     cls: 'wh-sess' },
+            { key: 'requested', label: 'Requested',   cls: 'wh-req' },
+            { key: 'produced',  label: 'Produced',    cls: 'wh-prod' },
+            { key: 'eval',      label: 'Evaluation',  cls: '' });
   const table = document.createElement('table'); table.className = 'wh';
   const thead = document.createElement('thead'); const htr = document.createElement('tr');
   cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.label; htr.appendChild(th); });
   thead.appendChild(htr); table.appendChild(thead);
   const tb = document.createElement('tbody');
   sessions.forEach(s => {
-    const tr = document.createElement('tr');
+    const tr = document.createElement('tr'); tr.className = 'clickable';
     cols.forEach(c => {
       if (c.key === 'session') { tr.appendChild(mkSessionCell(s)); return; }
+      if (c.key === 'eval')    { const td = document.createElement('td'); td.appendChild(evalBadge(s)); tr.appendChild(td); return; }
       let v;
       switch (c.key) {
         case 'date':      v = s.date || '—'; break;
         case 'project':   v = s.project || '—'; break;
-        case 'action':    v = s.action || '—'; break;
-        case 'status':    v = s.status || '—'; break;
-        case 'committed': v = s.committed || '—'; break;
+        case 'requested': v = s.requested || s.action || '—'; break;
+        case 'produced':  v = s.produced || s.committed || '—'; break;
         default:          v = '—';
       }
       tr.appendChild(mkCell(v, c.cls));
     });
+    tr.addEventListener('click', () => showEffort(s.id, 'functional'));
     tb.appendChild(tr);
   });
   table.appendChild(tb);
   return table;
+}
+
+// ─── Levels 2 & 1: drill into one work effort (functional items / raw exchanges) ─
+async function showEffort(id, level) {
+  whEffortId = id; whEffortLevel = level; setActiveLevel(level);
+  workMsg('Loading work effort…');
+  let d;
+  try { d = await (await fetch('/api/work-history?effort=' + encodeURIComponent(id))).json(); }
+  catch (e) { workMsg('Could not load this work effort.'); return; }
+  if (!d || d.error || !d.effort) { workMsg('Work effort not found.'); return; }
+  const e = d.effort;
+  const backToList = whCurrent ? () => showSessions(whCurrent)
+                   : whScope === 'all' ? () => showAllProjects()
+                   : () => showProjects();
+  const crumbs = [{ label: 'Home', onClick: () => showView('v17') }];
+  if (whCurrent) {
+    crumbs.push({ label: 'Work History', onClick: showProjects });
+    crumbs.push({ label: whCurrent, onClick: backToList });
+  } else {
+    crumbs.push({ label: 'Work History — All Projects', onClick: backToList });
+  }
+  crumbs.push({ label: clipText(e.topic || e.project, 42), onClick: level === 'raw' ? () => showEffort(id, 'functional') : null });
+  if (level === 'raw') crumbs.push({ label: 'Raw', onClick: null });
+  setCrumbs(crumbs);
+
+  const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
+  const head = document.createElement('div'); head.className = 'wh-effort-head';
+  const h = document.createElement('div'); h.className = 'wh-h';
+  h.textContent = (e.project || '') + (e.version ? ' ' + e.version : '') + ' — ' + (e.topic || 'Work Effort');
+  const jump = document.createElement('div');
+  [['functional', 'Functional Items'], ['raw', 'Raw exchanges']].forEach(([k, lbl]) => {
+    const b = document.createElement('button'); b.className = 'wh-level-btn' + (level === k ? ' active' : '');
+    b.textContent = lbl; b.addEventListener('click', () => showEffort(id, k));
+    jump.appendChild(b);
+  });
+  head.append(h, jump); wrap.appendChild(head);
+
+  const card = document.createElement('div'); card.className = 'wh-rollup-card';
+  const addRow = (k, val, cls) => {
+    if (!val) return;
+    const row = document.createElement('div'); row.className = 'wh-rollup-row';
+    const kk = document.createElement('div'); kk.className = 'wh-rollup-k'; kk.textContent = k;
+    const vv = document.createElement('div'); vv.className = 'wh-rollup-v' + (cls ? ' ' + cls : ''); vv.textContent = val;
+    row.append(kk, vv); card.appendChild(row);
+  };
+  addRow('Requested', e.requested);
+  addRow('Produced', e.produced, 'prod');
+  addRow('Issues', e.issues, 'iss');
+  const er = document.createElement('div'); er.className = 'wh-rollup-row';
+  const ek = document.createElement('div'); ek.className = 'wh-rollup-k'; ek.textContent = 'Evaluation';
+  const ev = document.createElement('div'); ev.className = 'wh-rollup-v'; ev.appendChild(evalBadge(e));
+  er.append(ek, ev); card.appendChild(er);
+  wrap.appendChild(card);
+
+  if (level === 'functional') {
+    const items = d.items || [];
+    const sh = document.createElement('div'); sh.className = 'wh-section-h'; sh.textContent = 'Functional Items (' + items.length + ')';
+    wrap.appendChild(sh);
+    if (!items.length) { const m = document.createElement('div'); m.className = 'wh-empty'; m.textContent = 'No functional items recorded.'; wrap.appendChild(m); }
+    else {
+      const list = document.createElement('div'); list.className = 'wh-items';
+      items.forEach(it => {
+        const fi = document.createElement('div'); fi.className = 'wh-fi';
+        const kd = document.createElement('div'); kd.className = 'wh-fi-kind ' + (it.kind || ''); kd.textContent = it.kind || '';
+        const tx = document.createElement('div'); tx.className = 'wh-fi-text'; tx.textContent = it.text || '';
+        fi.append(kd, tx); list.appendChild(fi);
+      });
+      wrap.appendChild(list);
+    }
+  } else {
+    const xs = d.exchanges || [];
+    const sh = document.createElement('div'); sh.className = 'wh-section-h'; sh.textContent = 'Raw exchanges (' + xs.length + ') — prompts ↔ responses';
+    wrap.appendChild(sh);
+    if (!xs.length) { const m = document.createElement('div'); m.className = 'wh-empty'; m.textContent = 'No raw exchanges recorded.'; wrap.appendChild(m); }
+    else {
+      const list = document.createElement('div'); list.className = 'wh-raw';
+      xs.forEach(x => {
+        const xc = document.createElement('div'); xc.className = 'wh-xc ' + (x.role || '');
+        const rl = document.createElement('div'); rl.className = 'wh-xc-role'; rl.textContent = x.role === 'assistant' ? '🗣️ SOL' : '🧑 You';
+        const tx = document.createElement('div'); tx.className = 'wh-xc-text'; tx.textContent = x.text || '';
+        xc.append(rl, tx); list.appendChild(xc);
+      });
+      wrap.appendChild(list);
+    }
+  }
+  workEl.replaceChildren(wrap);
 }
 
 // ─── Window controls (Electron only) ─────────────────────────────────────────

@@ -181,3 +181,58 @@ table.wh td.wh-sess { white-space: normal; min-width: 150px; }
 .wh-sess-title { color: #d6deff; font-size: 12px; }
 table.wh td.wh-proj { color: #9fb4ff; white-space: nowrap; font-weight: 600; }
 table.wh td.wh-commit { color: rgba(150,205,170,0.85); white-space: normal; font-size: 11.5px; }
+
+/* ─── Work-history 3-level drill-down (v3.6) ──────────────────────────────────── */
+/* Level 3 — roll-up table: Requested/Produced wrap; evaluation badge */
+table.wh td.wh-req  { color: rgba(200,210,240,0.88); white-space: normal; max-width: 340px; }
+table.wh td.wh-prod { color: rgba(150,205,170,0.85); white-space: normal; max-width: 300px; font-size: 11.5px; }
+.wh-eval { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; white-space: nowrap; }
+.wh-eval.ok   { color: #3ddc84; }
+.wh-eval.bad  { color: #f0b86e; }
+.wh-eval.none { color: rgba(150,165,210,0.5); }
+
+/* Level 2/1 — effort detail header + roll-up summary card */
+.wh-effort-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.wh-effort-head .wh-h { margin-bottom: 0; }
+.wh-rollup-card {
+  border: 1px solid rgba(59,91,219,0.30); border-radius: 8px;
+  background: rgba(20,24,44,0.55); padding: 10px 16px; margin-bottom: 16px;
+}
+.wh-rollup-row { display: flex; gap: 12px; padding: 5px 0; font-size: 12.5px; align-items: baseline; }
+.wh-rollup-row + .wh-rollup-row { border-top: 1px solid rgba(59,91,219,0.10); }
+.wh-rollup-k { flex: 0 0 84px; color: rgba(150,170,230,0.85); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .4px; }
+.wh-rollup-v { flex: 1 1 auto; color: #d6deff; white-space: normal; }
+.wh-rollup-v.prod { color: rgba(150,205,170,0.92); }
+.wh-rollup-v.iss  { color: rgba(240,184,110,0.95); }
+
+/* Level-jump buttons inside an effort (Functional Items / Raw) */
+.wh-level-btn {
+  background: rgba(20,22,40,0.9); color: rgba(170,185,255,0.7);
+  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
+  padding: 3px 12px; cursor: pointer; font: inherit; font-size: 11.5px; margin-left: 6px;
+  transition: background .15s, color .15s;
+}
+.wh-level-btn.active { background: rgba(61,220,132,0.22); color: #b9f4d2; border-color: rgba(61,220,132,0.5); }
+.wh-level-btn:hover:not(.active) { background: rgba(40,44,80,0.9); color: #cdd8ff; }
+
+/* Section heading */
+.wh-section-h { font-size: 12px; color: rgba(150,170,230,0.85); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin: 14px 0 8px; }
+
+/* Level 2 — functional items list */
+.wh-items { display: flex; flex-direction: column; gap: 3px; }
+.wh-fi { display: flex; gap: 10px; padding: 6px 10px; border-radius: 5px; background: rgba(20,22,40,0.45); font-size: 12px; }
+.wh-fi-kind { flex: 0 0 80px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+.wh-fi-kind.requested { color: #9fb4ff; }
+.wh-fi-kind.produced  { color: #6fd3a0; }
+.wh-fi-kind.issue     { color: #f0b86e; }
+.wh-fi-text { flex: 1 1 auto; color: #cdd8ff; white-space: normal; }
+
+/* Level 1 — raw exchanges (prompt ↔ response) */
+.wh-raw { display: flex; flex-direction: column; gap: 8px; }
+.wh-xc { display: flex; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.45; }
+.wh-xc.user { background: rgba(40,48,90,0.40); }
+.wh-xc.assistant { background: rgba(20,40,32,0.40); }
+.wh-xc-role { flex: 0 0 56px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.wh-xc.user .wh-xc-role { color: #9fb4ff; }
+.wh-xc.assistant .wh-xc-role { color: #6fd3a0; }
+.wh-xc-text { flex: 1 1 auto; color: rgba(214,222,255,0.92); white-space: normal; }

@@ -122,7 +122,7 @@ function sessionTopic(file, id, requested) {
 }
 
 // ── zero-token extraction (parses PAI's own structured markers) ───────────────
-const META    = /Does this user response indicate|^CONTEXT:|system-reminder|PAI ALGORITHM|Banned Phrase|FORK →|local-command|<command-|caveat:|Your questions have been answered/i;
+const META    = /Does this user response indicate|^CONTEXT:|system-reminder|PAI ALGORITHM|Banned Phrase|FORK →|local-command|<command-|caveat:|Your questions have been answered|task-notification|tool-use-id|toolu_[A-Za-z0-9]|\[Request interrupted|Background command|output completed Agent|automated background|\/tmp\/claude-/i;
 const TRIVIAL = /^(continue|go|yes|no|ok|okay|y|n|retry|continue retry|next|proceed|do it|S\d)\b[.!\s]*$/i;
 // App-internal agent/system prompts (e.g. Council's multi-agent role prompts)
 // captured as "user" turns — these are not Dane's genuine work requests.
