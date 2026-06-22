@@ -3,6 +3,7 @@ const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
 const { execFileSync } = require('child_process');
+const idx  = require('./indexer');
 
 const PORT = 4040;
 const MIME = {
@@ -281,12 +282,14 @@ http.createServer((req, res) => {
 
   // JSON API: session-records work history. Early-return before static files.
   if (u.pathname === '/api/work-history') {
-    const name  = decodeURIComponent(u.searchParams.get('project') || '');
-    const range = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '' };
-    const scope = u.searchParams.get('scope') || '';
-    const payload = scope === 'all' ? allProjects(range)
-                  : name            ? projectSessions(name, range)
-                  :                   projectList(range);
+    const name   = decodeURIComponent(u.searchParams.get('project') || '');
+    const effort = u.searchParams.get('effort') || '';
+    const range  = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '' };
+    const scope  = u.searchParams.get('scope') || '';
+    const payload = effort          ? idx.queryEffort(effort)            // Phase-2 drill-down
+                  : scope === 'all' ? idx.queryRollup(range)             // all projects
+                  : name            ? idx.queryProject(name, range)      // one project
+                  :                   idx.queryProjects(range);          // project list
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(payload));
     return;
