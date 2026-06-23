@@ -425,9 +425,9 @@ async function loadV1() {
     const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500);
     await fetch('http://localhost:3000/', { mode: 'no-cors', signal: ctrl.signal });
     clearTimeout(t);
-    frame.src = 'http://localhost:3000/'; frame.style.display = ''; if (fb) fb.style.display = 'none'; _v1Loaded = true;
+    frame.src = 'http://localhost:3000/'; frame.classList.remove('v1-hidden'); if (fb) fb.classList.add('v1-hidden'); _v1Loaded = true;
   } catch {
-    frame.style.display = 'none'; if (fb) fb.style.display = 'flex';
+    frame.classList.add('v1-hidden'); if (fb) fb.classList.remove('v1-hidden');
   }
 }
 function setWhExpanded(exp) {
@@ -633,7 +633,21 @@ function ensureFilterBar() {
 
 // Only wire the launcher's nav + Work History when its shell is present.
 // v18.html also loads app.js (for the orbital canvas) but has no nav shell.
-if (whNavList) { ensureFilterBar(); buildNav(); }
+if (whNavList) {
+  ensureFilterBar(); buildNav();
+  // Default landing: Work History — All Projects · Today + Yesterday · Roll-Up · Complete.
+  // Deferred (setTimeout 0) so it runs AFTER this script finishes initializing the
+  // later consts (workEl) — calling showAllProjects synchronously here would hit
+  // workEl in its temporal dead zone.
+  setTimeout(async () => {
+    const yest = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return _ymd(d); })();
+    whRange.from = yest; whRange.to = _ymd(new Date()); whRange.preset = 'custom';
+    whCompleted = 'complete';
+    setActivePreset(null); setActiveCompleted('complete'); updateFilterUI();
+    setFolderScope('all'); setWhExpanded(true); showView('work');
+    await showAllProjects();
+  }, 0);
+}
 
 // ─── Work History (session records, tabular) ────────────────────────────────────
 const workEl = document.getElementById('work-content');

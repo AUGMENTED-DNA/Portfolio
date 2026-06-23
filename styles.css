@@ -267,3 +267,6 @@ table.wh td.wh-prod { color: rgba(150,205,170,0.85); white-space: normal; max-wi
 /* Outstanding / Not delivered section */
 .wh-section-h.wh-out-h { color: #f0b86e; }
 .wh-fi.wh-out-fi { background: rgba(60,40,20,0.35); border-left: 2px solid rgba(240,184,110,0.55); }
+
+/* V1 frame/fallback visibility toggle (class, not inline style — CSP-safe) */
+#view-v1 .v1-hidden { display: none; }

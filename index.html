@@ -18,21 +18,21 @@
         <span class="brand-mark">⬢</span><span class="brand-text">PAI Portfolio</span>
       </button>
       <div class="nav-links">
-        <button class="nav-item active" data-target="v17">◎ Orbital</button>
+        <button class="nav-item active" id="nav-work" data-target="work"><span class="wh-arrow">▸</span> <span class="wh-folder" id="wh-folder">🗀</span> Work History</button>
+        <button class="nav-item" data-target="v17">◎ Orbital</button>
         <button class="nav-item" data-target="v18">○ Circular</button>
         <button class="nav-item" data-target="v1">▦ V1 Table</button>
-        <button class="nav-item" id="nav-work" data-target="work"><span class="wh-arrow">▸</span> <span class="wh-folder" id="wh-folder">🗀</span> Work History</button>
         <div id="wh-nav-list" class="wh-nav-list hidden"></div>
       </div>
     </nav>
     <main id="main">
-      <section id="view-v17" class="view">
+      <section id="view-v17" class="view hidden">
         <canvas id="c"></canvas>
         <div id="tooltip"></div>
       </section>
       <section id="view-v1" class="view hidden">
         <iframe id="v1-frame" title="v1 Portfolio"></iframe>
-        <div id="v1-fallback" class="v1-fallback" style="display:none">
+        <div id="v1-fallback" class="v1-fallback v1-hidden">
           <div class="v1-fb-title">▦ V1 app isn't running</div>
           <div class="v1-fb-body">The archived v1 portfolio runs on <code>localhost:3000</code>, which isn't up right now. Start it in WSL:<br><br><code>cd v1 &amp;&amp; node server.js</code><br><br>then click <strong>V1 Table</strong> again.</div>
         </div>
@@ -40,7 +40,7 @@
       <section id="view-v18" class="view hidden">
         <iframe id="v18-frame" src="/v18.html" title="v1.8 Circular"></iframe>
       </section>
-      <section id="view-work" class="view hidden">
+      <section id="view-work" class="view">
         <div id="crumbs"></div>
         <div id="work-content"></div>
       </section>

@@ -27,6 +27,7 @@ const NAME_TO_PATH = {
   'Content-Converter': '/mnt/c/Users/dmcneill/Projects/Content-Converter',
   'Council':           '/mnt/c/Users/dmcneill/Projects/Council',
   'Portfolio':         '/mnt/c/Users/dmcneill/Projects/Portfolio',
+  'Claude + PAI':      '/home/dmcneill/.claude',
   'PAI Visual':        '/mnt/c/Users/dmcneill/Projects/PAI_Visual',
   'PAI GUI':           '/mnt/c/Users/dmcneill/Projects/PAI_GUI',
   'MissionControl':    '/mnt/c/Users/dmcneill/Projects/MissionControl',
