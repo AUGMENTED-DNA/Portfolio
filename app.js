@@ -412,6 +412,23 @@ function showView(target) {
     if (el) el.classList.toggle('hidden', v !== target);
   });
   if (target === 'v17') resize();   // canvas needs live dimensions when revealed
+  if (target === 'v1')  loadV1();   // archived v1 app: probe :3000, load or show fallback
+}
+// Lazy-load the v1 iframe only when opened; if localhost:3000 is down, show a
+// friendly fallback instead of a broken/blank frame.
+let _v1Loaded = false;
+async function loadV1() {
+  const frame = document.getElementById('v1-frame');
+  const fb = document.getElementById('v1-fallback');
+  if (!frame || _v1Loaded) return;
+  try {
+    const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 2500);
+    await fetch('http://localhost:3000/', { mode: 'no-cors', signal: ctrl.signal });
+    clearTimeout(t);
+    frame.src = 'http://localhost:3000/'; frame.style.display = ''; if (fb) fb.style.display = 'none'; _v1Loaded = true;
+  } catch {
+    frame.style.display = 'none'; if (fb) fb.style.display = 'flex';
+  }
 }
 function setWhExpanded(exp) {
   whNavList.classList.toggle('hidden', !exp);
@@ -457,12 +474,20 @@ async function buildNav() {
     if (bt) bt.textContent = 'PAI Portfolio ' + data.appVersion;
   }
   whNavList.replaceChildren();
+  // "★ All Projects" — the discoverable entry into the cross-project roll-up.
+  const allBtn = document.createElement('button'); allBtn.className = 'wh-nav-item wh-nav-all';
+  const allNm = document.createElement('span'); allNm.textContent = '★ All Projects';
+  const allCt = document.createElement('span'); allCt.className = 'wh-nav-count';
+  allCt.textContent = (data.projects || []).reduce((s, p) => s + (p.sessions || 0), 0);
+  allBtn.append(allNm, allCt);
+  allBtn.addEventListener('click', () => { showView('work'); setFolderScope('all'); showAllProjects(); });
+  whNavList.appendChild(allBtn);
   (data.projects || []).forEach(p => {
     const b = document.createElement('button'); b.className = 'wh-nav-item';
     const nm = document.createElement('span'); nm.textContent = p.name;
     const ct = document.createElement('span'); ct.className = 'wh-nav-count'; ct.textContent = p.sessions;
     b.append(nm, ct);
-    b.addEventListener('click', () => { showView('work'); showSessions(p.name); });
+    b.addEventListener('click', () => { showView('work'); setFolderScope('project'); showSessions(p.name); });
     whNavList.appendChild(b);
   });
 }
@@ -549,6 +574,23 @@ async function applyLevel(key) {
   if (!id) { setActiveLevel('rollup'); return; }          // nothing to drill into
   whEffortLevel = key; await showEffort(id, key);
 }
+// ─── Completed filter (All / Complete / Incomplete) ──────────────────────────────
+let whCompleted = 'all';
+const WH_COMPLETED = [['all', 'All'], ['complete', 'Complete'], ['incomplete', 'Incomplete']];
+function setActiveCompleted(key) {
+  whFilterBar?.querySelectorAll('button.wh-f-comp[data-comp]').forEach((b) =>
+    b.classList.toggle('active', b.dataset.comp === key));
+}
+async function applyCompleted(key) {
+  whCompleted = key; setActiveCompleted(key);
+  if (whEffortId) return;            // filter only affects the roll-up list
+  await reloadWork();
+}
+function filterByCompleted(sessions) {
+  if (whCompleted === 'complete')   return sessions.filter((s) => s.eval_ok === 1);
+  if (whCompleted === 'incomplete') return sessions.filter((s) => s.eval_ok !== 1);
+  return sessions;
+}
 function ensureFilterBar() {
   if (whFilterBar) return;
   const bar = document.createElement('div'); bar.id = 'wh-filter';
@@ -573,13 +615,20 @@ function ensureFilterBar() {
     b.addEventListener('click', () => applyLevel(key));
     bar.appendChild(b);
   });
+  const compSep = document.createElement('span'); compSep.className = 'wh-f-sep'; compSep.textContent = '·'; bar.appendChild(compSep);
+  const compLbl = document.createElement('span'); compLbl.className = 'wh-f-label'; compLbl.textContent = 'Status:'; bar.appendChild(compLbl);
+  WH_COMPLETED.forEach(([key, label]) => {
+    const b = document.createElement('button'); b.className = 'wh-f-comp'; b.dataset.comp = key; b.textContent = label;
+    b.addEventListener('click', () => applyCompleted(key));
+    bar.appendChild(b);
+  });
   const spacer = document.createElement('span'); spacer.className = 'wh-f-spacer'; bar.appendChild(spacer);
   const summary = document.createElement('span'); summary.className = 'wh-f-summary'; summary.id = 'wh-f-summary';
   bar.appendChild(summary);
   const view = document.getElementById('view-work');
   view.insertBefore(bar, view.firstChild);
   whFilterBar = bar;
-  setActivePreset('all'); setActiveLevel('rollup'); updateFilterUI();
+  setActivePreset('all'); setActiveLevel('rollup'); setActiveCompleted('all'); updateFilterUI();
 }
 
 // Only wire the launcher's nav + Work History when its shell is present.
@@ -704,9 +753,10 @@ async function showAllProjects() {
 // ─── Level 3: roll-up table (one row per work effort) ─────────────────────────
 const clipText = (s, n) => { s = (s || '').trim(); return s.length > n ? s.slice(0, n) + '…' : s; };
 function evalBadge(s) {
-  const span = document.createElement('span'); const ok = s.eval_ok;
-  span.className = 'wh-eval ' + (ok === 1 ? 'ok' : ok === 0 ? 'bad' : 'none');
-  span.textContent = ok === 1 ? '✅ Complete' : ok === 0 ? '⚠️ Incomplete' : '— No verdict';
+  const span = document.createElement('span'); const ok = s.eval_ok === 1;
+  span.className = 'wh-eval ' + (ok ? 'ok' : 'bad');
+  const left = (s.issues || '').split(' • ').filter(Boolean).length;
+  span.textContent = ok ? '✅ Complete' : ('⚠️ Incomplete' + (left ? ' · ' + left + ' left' : ''));
   span.title = s.evaluation || '';
   return span;
 }
@@ -719,12 +769,13 @@ function mkSessionCell(s) {
 }
 // Level-3 roll-up: Date · [Project] · Session · Requested · Produced · Evaluation.
 function renderRollupTable(sessions, showProject) {
+  sessions = filterByCompleted(sessions);
   const cols = [{ key: 'date', label: 'Date', cls: 'date' }];
   if (showProject) cols.push({ key: 'project', label: 'Project', cls: 'wh-proj' });
-  cols.push({ key: 'session',   label: 'Session',     cls: 'wh-sess' },
-            { key: 'requested', label: 'Requested',   cls: 'wh-req' },
-            { key: 'produced',  label: 'Produced',    cls: 'wh-prod' },
-            { key: 'eval',      label: 'Evaluation',  cls: '' });
+  cols.push({ key: 'session',   label: 'Session',   cls: 'wh-sess' },
+            { key: 'requested', label: 'Attempted', cls: 'wh-req' },
+            { key: 'produced',  label: 'Delivered', cls: 'wh-prod' },
+            { key: 'eval',      label: 'Completed', cls: '' });
   const table = document.createElement('table'); table.className = 'wh';
   const thead = document.createElement('thead'); const htr = document.createElement('tr');
   cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.label; htr.appendChild(th); });
@@ -795,14 +846,28 @@ async function showEffort(id, level) {
     const vv = document.createElement('div'); vv.className = 'wh-rollup-v' + (cls ? ' ' + cls : ''); vv.textContent = val;
     row.append(kk, vv); card.appendChild(row);
   };
-  addRow('Requested', e.requested);
-  addRow('Produced', e.produced, 'prod');
-  addRow('Issues', e.issues, 'iss');
+  addRow('Attempted', e.requested);
+  addRow('Delivered', e.produced, 'prod');
   const er = document.createElement('div'); er.className = 'wh-rollup-row';
-  const ek = document.createElement('div'); ek.className = 'wh-rollup-k'; ek.textContent = 'Evaluation';
+  const ek = document.createElement('div'); ek.className = 'wh-rollup-k'; ek.textContent = 'Completed';
   const ev = document.createElement('div'); ev.className = 'wh-rollup-v'; ev.appendChild(evalBadge(e));
   er.append(ek, ev); card.appendChild(er);
   wrap.appendChild(card);
+  // Not delivered / Outstanding — the leftover items, only when incomplete.
+  const leftItems = (e.issues || '').split(' • ').filter(Boolean);
+  if (e.eval_ok !== 1 && leftItems.length) {
+    const oh = document.createElement('div'); oh.className = 'wh-section-h wh-out-h';
+    oh.textContent = 'Not delivered / Outstanding (' + leftItems.length + ')';
+    wrap.appendChild(oh);
+    const ol = document.createElement('div'); ol.className = 'wh-items';
+    leftItems.forEach(t => {
+      const fi = document.createElement('div'); fi.className = 'wh-fi wh-out-fi';
+      const kd = document.createElement('div'); kd.className = 'wh-fi-kind issue'; kd.textContent = 'outstanding';
+      const tx = document.createElement('div'); tx.className = 'wh-fi-text'; tx.textContent = t;
+      fi.append(kd, tx); ol.appendChild(fi);
+    });
+    wrap.appendChild(ol);
+  }
 
   if (level === 'functional') {
     const items = d.items || [];

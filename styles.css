@@ -236,3 +236,34 @@ table.wh td.wh-prod { color: rgba(150,205,170,0.85); white-space: normal; max-wi
 .wh-xc.user .wh-xc-role { color: #9fb4ff; }
 .wh-xc.assistant .wh-xc-role { color: #6fd3a0; }
 .wh-xc-text { flex: 1 1 auto; color: rgba(214,222,255,0.92); white-space: normal; }
+
+/* ─── Work-history v3.7: All-Projects nav · V1 fallback · Status filter · Outstanding ─ */
+.wh-nav-item.wh-nav-all { color: #cbd8ff; font-weight: 600; border-bottom: 1px solid rgba(59,91,219,0.18); margin-bottom: 2px; }
+.wh-nav-item.wh-nav-all:hover { background: rgba(59,91,219,0.30); color: #fff; }
+.wh-nav-item.wh-nav-all.active { background: rgba(59,91,219,0.5); color: #fff; }
+
+/* V1 "app isn't running" fallback card */
+.v1-fallback {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  background: #07071a; color: #c8d4ff; padding: 32px; gap: 10px;
+}
+.v1-fallback .v1-fb-title { font-size: 18px; font-weight: 600; color: #8ab4f8; }
+.v1-fallback .v1-fb-body { font-size: 13px; color: rgba(200,212,255,0.78); line-height: 1.7; max-width: 480px; }
+.v1-fallback code {
+  background: rgba(59,91,219,0.18); border: 1px solid rgba(59,91,219,0.30); border-radius: 4px;
+  padding: 1px 6px; font-family: ui-monospace, 'Cascadia Code', monospace; color: #b9f4d2;
+}
+
+/* Completed (Status) filter buttons */
+#wh-filter button.wh-f-comp {
+  background: rgba(20,22,40,0.9); color: rgba(170,185,255,0.7);
+  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
+  padding: 3px 10px; cursor: pointer; font: inherit; transition: background .15s, color .15s;
+}
+#wh-filter button.wh-f-comp.active { background: rgba(59,91,219,0.78); color: #fff; border-color: rgba(92,124,250,0.7); }
+#wh-filter button.wh-f-comp:hover:not(.active) { background: rgba(40,44,80,0.9); color: #cdd8ff; }
+
+/* Outstanding / Not delivered section */
+.wh-section-h.wh-out-h { color: #f0b86e; }
+.wh-fi.wh-out-fi { background: rgba(60,40,20,0.35); border-left: 2px solid rgba(240,184,110,0.55); }

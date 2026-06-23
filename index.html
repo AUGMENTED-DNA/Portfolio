@@ -31,7 +31,11 @@
         <div id="tooltip"></div>
       </section>
       <section id="view-v1" class="view hidden">
-        <iframe id="v1-frame" src="http://localhost:3000" title="v1 Portfolio"></iframe>
+        <iframe id="v1-frame" title="v1 Portfolio"></iframe>
+        <div id="v1-fallback" class="v1-fallback" style="display:none">
+          <div class="v1-fb-title">▦ V1 app isn't running</div>
+          <div class="v1-fb-body">The archived v1 portfolio runs on <code>localhost:3000</code>, which isn't up right now. Start it in WSL:<br><br><code>cd v1 &amp;&amp; node server.js</code><br><br>then click <strong>V1 Table</strong> again.</div>
+        </div>
       </section>
       <section id="view-v18" class="view hidden">
         <iframe id="v18-frame" src="/v18.html" title="v1.8 Circular"></iframe>

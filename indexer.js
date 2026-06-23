@@ -117,8 +117,11 @@ function gitSubjects(repo) {
 function sessionTopic(file, id, requested) {
   const t = grepAll(file, '"aiTitle"', false)[0];
   if (t) { try { const o = JSON.parse(t); if (o.aiTitle) return String(o.aiTitle).trim(); } catch { /* */ } }
-  if (requested && requested.length) return clip(requested[0], 70);   // fall back to the real ask
-  return `(untitled ${id.slice(0, 8)})`;
+  if (requested && requested.length) {                  // derive a short title (first clause of the ask)
+    const first = requested[0].split(/[.!?\n]/)[0].trim();
+    return clip(first || requested[0], 52);
+  }
+  return `Session ${id.slice(0, 8)}`;
 }
 
 // ── zero-token extraction (parses PAI's own structured markers) ───────────────
@@ -129,7 +132,7 @@ const TRIVIAL = /^(continue|go|yes|no|ok|okay|y|n|retry|continue retry|next|proc
 const SYNTHETIC = /^(You are\b|You're (an?|the)\b|Act(ing)? as\b|Respond (only|with)\b|Output only\b|Given the following\b|You will be\b)/i;
 // Code-looking text — skip so the indexer never matches its OWN source while
 // indexing this very repo's transcripts (the self-pollution bug).
-const CODEY = /[`{}]|=>|\);|\$\{|\.\w+\(|===|!==/;
+const CODEY = /[`{}]|\*\*|=>|\);|\$\{|\.\w+\(|===|!==|"\s*flag/;
 
 // Requested: genuine user prompts (skip continuations / approval echoes / meta /
 // app-internal agent prompts).
@@ -247,13 +250,26 @@ function indexSession(name, repo, version, f) {
   const exchanges = extractExchanges(f.file);
   // Drop pure hook/meta/agent-call sessions with no genuine request and no output.
   if (!requested.length && !produced.length && !exchanges.length) return false;
+  // Binary completion: Incomplete iff the session recorded explicit outstanding
+  // work (a ⚠️ verdict or "Not completed"/UNTESTED markers); otherwise Complete.
+  // `outstanding` (the leftover list) is populated only for Incomplete efforts.
+  let evalOk, evalText, outstanding = '';
+  if (evaln.ok === 0 || issues.length) {
+    evalOk = 0; evalText = 'Incomplete';
+    outstanding = issues.join(' • ') || clip(evaln.text.replace(/^Incomplete[^:]*:?\s*/i, ''), 150);
+  } else {
+    evalOk = 1;
+    evalText = evaln.ok === 1 ? 'Complete — delivered acceptably'
+             : produced.length ? 'Complete — shipped ' + produced.length + ' commit' + (produced.length === 1 ? '' : 's')
+             : 'Complete — no outstanding items';
+  }
   const items = [];
   requested.forEach((t) => items.push(['requested', t]));
   produced.forEach((t)  => items.push(['produced', t]));
-  issues.forEach((t)    => items.push(['issue', t]));
+  (outstanding ? outstanding.split(' • ') : []).forEach((t) => { if (t) items.push(['outstanding', t]); });
   upsert.run(f.id, name, fmtDate(f.mtime), Math.round(f.mtime), f.size,
     sessionTopic(f.file, f.id, requested), version, requested.join(' • '), produced.join(' • '),
-    issues.join(' • '), evaln.text, evaln.ok, items.length);
+    outstanding, evalText, evalOk, items.length);
   delItems.run(f.id); items.forEach(([k, t], i) => insItem.run(f.id, i, k, t));
   delExch.run(f.id);  exchanges.forEach((e, i) => insExch.run(f.id, i, e.role, e.text));
   return true;
