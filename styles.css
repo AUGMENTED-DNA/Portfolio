@@ -276,3 +276,12 @@ table.wh td.wh-prod { color: rgba(150,205,170,0.85); white-space: normal; max-wi
 .wh-dp-proj { color: #9fb4ff; font-weight: 600; font-size: 11px; margin-top: 2px; }
 table.wh td.wh-req  { max-width: 480px; }
 table.wh td.wh-prod { max-width: 360px; }
+
+/* Roll-up v4.0: D/S/T metadata column (Date / Time / Session# / Project) + Title-only column */
+table.wh td.wh-dst { white-space: nowrap; vertical-align: top; }
+.wh-dst-d { color: rgba(155,170,215,0.92); font-variant-numeric: tabular-nums; font-size: 12px; }
+.wh-dst-t { color: rgba(150,165,210,0.7);  font-variant-numeric: tabular-nums; font-size: 11px; }
+.wh-dst-s { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 10px; color: rgba(140,160,215,0.6); }
+.wh-dst-p { color: #9fb4ff; font-weight: 600; font-size: 11px; margin-top: 2px; }
+table.wh td.wh-title { min-width: 150px; max-width: 280px; }
+table.wh td.wh-title .wh-sess-title { color: #d6deff; font-size: 12.5px; white-space: normal; }

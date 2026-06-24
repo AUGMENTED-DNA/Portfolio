@@ -116,7 +116,8 @@ function gitSubjects(repo) {
   } catch { return (_subsCache[repo] = []); }
 }
 function sessionTopic(file, id, requested) {
-  const t = grepAll(file, '"aiTitle"', false)[0];
+  const titles = grepAll(file, '"aiTitle"', false);
+  const t = titles[titles.length - 1];   // LAST aiTitle = the most recent rename (best reflects the session)
   if (t) { try { const o = JSON.parse(t); if (o.aiTitle) return String(o.aiTitle).trim(); } catch { /* */ } }
   if (requested && requested.length) {                  // derive a short title (first clause of the ask)
     const first = requested[0].split(/[.!?\n]/)[0].trim();

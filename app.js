@@ -783,18 +783,23 @@ function mkSessionCell(s) {
 }
 // Level-3 roll-up: Date · [Project] · Session · Requested · Produced · Evaluation.
 // Date cell with the project stacked underneath (reclaims the old Project column).
+// D/S/T cell — Date / Time / Session# (and Project for all-scope) stacked, so the
+// Title column can stand alone. Saves horizontal space.
 function mkDateCell(s, showProject) {
-  const td = document.createElement('td'); td.className = 'date wh-dp';
-  const dEl = document.createElement('div'); dEl.className = 'wh-dp-date'; dEl.textContent = s.date || '—';
-  td.appendChild(dEl);
-  if (showProject) { const pEl = document.createElement('div'); pEl.className = 'wh-dp-proj'; pEl.textContent = s.project || ''; td.appendChild(pEl); }
+  const td = document.createElement('td'); td.className = 'date wh-dst';
+  const dt = (s.date || '—').split(' ');
+  const dEl = document.createElement('div'); dEl.className = 'wh-dst-d'; dEl.textContent = dt[0] || '—';
+  const tEl = document.createElement('div'); tEl.className = 'wh-dst-t'; tEl.textContent = dt[1] || '';
+  const sEl = document.createElement('div'); sEl.className = 'wh-dst-s'; sEl.textContent = (s.id || '').slice(0, 8);
+  td.append(dEl, tEl, sEl);
+  if (showProject) { const pEl = document.createElement('div'); pEl.className = 'wh-dst-p'; pEl.textContent = s.project || ''; td.appendChild(pEl); }
   return td;
 }
 const firstSentence = (t) => (t || '').split(/(?<=[.!?])\s/)[0];
 function renderRollupTable(sessions, showProject) {
   sessions = filterByCompleted(sessions);
-  const cols = [{ key: 'date',      label: showProject ? 'Date · Project' : 'Date', cls: 'date' },
-                { key: 'session',   label: 'Session',   cls: 'wh-sess' },
+  const cols = [{ key: 'date',      label: 'D/S/T',     cls: 'date' },
+                { key: 'session',   label: 'Title',     cls: 'wh-title' },
                 { key: 'requested', label: 'Attempted', cls: 'wh-req' },
                 { key: 'delivered', label: 'Delivered', cls: 'wh-prod' },
                 { key: 'eval',      label: 'Completed', cls: '' }];
@@ -807,7 +812,7 @@ function renderRollupTable(sessions, showProject) {
     const tr = document.createElement('tr'); tr.className = 'clickable';
     cols.forEach(c => {
       if (c.key === 'date')    { tr.appendChild(mkDateCell(s, showProject)); return; }
-      if (c.key === 'session') { tr.appendChild(mkSessionCell(s)); return; }
+      if (c.key === 'session') { const td = document.createElement('td'); td.className = 'wh-title'; const tt = document.createElement('div'); tt.className = 'wh-sess-title'; tt.textContent = s.topic || '(untitled)'; td.appendChild(tt); tr.appendChild(td); return; }
       if (c.key === 'eval')    { const td = document.createElement('td'); td.appendChild(evalBadge(s)); tr.appendChild(td); return; }
       let v;
       switch (c.key) {
