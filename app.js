@@ -782,14 +782,22 @@ function mkSessionCell(s) {
   td.append(idEl, tEl); return td;
 }
 // Level-3 roll-up: Date · [Project] · Session · Requested · Produced · Evaluation.
+// Date cell with the project stacked underneath (reclaims the old Project column).
+function mkDateCell(s, showProject) {
+  const td = document.createElement('td'); td.className = 'date wh-dp';
+  const dEl = document.createElement('div'); dEl.className = 'wh-dp-date'; dEl.textContent = s.date || '—';
+  td.appendChild(dEl);
+  if (showProject) { const pEl = document.createElement('div'); pEl.className = 'wh-dp-proj'; pEl.textContent = s.project || ''; td.appendChild(pEl); }
+  return td;
+}
+const firstSentence = (t) => (t || '').split(/(?<=[.!?])\s/)[0];
 function renderRollupTable(sessions, showProject) {
   sessions = filterByCompleted(sessions);
-  const cols = [{ key: 'date', label: 'Date', cls: 'date' }];
-  if (showProject) cols.push({ key: 'project', label: 'Project', cls: 'wh-proj' });
-  cols.push({ key: 'session',   label: 'Session',   cls: 'wh-sess' },
-            { key: 'requested', label: 'Attempted', cls: 'wh-req' },
-            { key: 'produced',  label: 'Delivered', cls: 'wh-prod' },
-            { key: 'eval',      label: 'Completed', cls: '' });
+  const cols = [{ key: 'date',      label: showProject ? 'Date · Project' : 'Date', cls: 'date' },
+                { key: 'session',   label: 'Session',   cls: 'wh-sess' },
+                { key: 'requested', label: 'Attempted', cls: 'wh-req' },
+                { key: 'delivered', label: 'Delivered', cls: 'wh-prod' },
+                { key: 'eval',      label: 'Completed', cls: '' }];
   const table = document.createElement('table'); table.className = 'wh';
   const thead = document.createElement('thead'); const htr = document.createElement('tr');
   cols.forEach(c => { const th = document.createElement('th'); th.textContent = c.label; htr.appendChild(th); });
@@ -798,14 +806,13 @@ function renderRollupTable(sessions, showProject) {
   sessions.forEach(s => {
     const tr = document.createElement('tr'); tr.className = 'clickable';
     cols.forEach(c => {
+      if (c.key === 'date')    { tr.appendChild(mkDateCell(s, showProject)); return; }
       if (c.key === 'session') { tr.appendChild(mkSessionCell(s)); return; }
       if (c.key === 'eval')    { const td = document.createElement('td'); td.appendChild(evalBadge(s)); tr.appendChild(td); return; }
       let v;
       switch (c.key) {
-        case 'date':      v = s.date || '—'; break;
-        case 'project':   v = s.project || '—'; break;
-        case 'requested': v = s.requested || s.action || '—'; break;
-        case 'produced':  v = s.produced || s.committed || '—'; break;
+        case 'requested': v = clipText(firstSentence(s.requested || s.action || '—'), 100); break;
+        case 'delivered': v = clipText(s.delivered || s.produced || '—', 100); break;
         default:          v = '—';
       }
       tr.appendChild(mkCell(v, c.cls));

@@ -270,3 +270,9 @@ table.wh td.wh-prod { color: rgba(150,205,170,0.85); white-space: normal; max-wi
 
 /* V1 frame/fallback visibility toggle (class, not inline style — CSP-safe) */
 #view-v1 .v1-hidden { display: none; }
+
+/* Roll-up v3.9: Date+Project stacked cell · wider Attempted (old Project column reclaimed) */
+.wh-dp-date { color: rgba(150,165,210,0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wh-dp-proj { color: #9fb4ff; font-weight: 600; font-size: 11px; margin-top: 2px; }
+table.wh td.wh-req  { max-width: 480px; }
+table.wh td.wh-prod { max-width: 360px; }

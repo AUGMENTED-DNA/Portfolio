@@ -43,7 +43,7 @@ const db = new DatabaseSync(DB_PATH);
 db.exec(`
   CREATE TABLE IF NOT EXISTS work_efforts (
     id TEXT PRIMARY KEY, project TEXT, date TEXT, mtime INTEGER, size INTEGER,
-    topic TEXT, version TEXT, requested TEXT, produced TEXT, issues TEXT,
+    topic TEXT, version TEXT, requested TEXT, produced TEXT, delivered TEXT, issues TEXT,
     evaluation TEXT, eval_ok INTEGER, item_count INTEGER
   );
   CREATE TABLE IF NOT EXISTS functional_items (effort_id TEXT, seq INTEGER, kind TEXT, text TEXT);
@@ -182,6 +182,21 @@ function producedFallback(file) {
   }
   return out;
 }
+// First substantive assistant response — used as a Delivered summary when the
+// session shipped no commit (skips tool/process narration and code-looking text).
+function firstResponse(file) {
+  for (const ln of grepAll(file, '"type":"assistant"', false)) {
+    const t = msgText(ln);
+    if (!t || t.length < 20) continue;
+    if (!/^["“']?[A-Z]/.test(t)) continue;                          // must read like a sentence
+    if (CODEY.test(t.slice(0, 90))) continue;
+    if (/^(I'll|Let me|Reading|Checking|Running|Looking|Got it)\b/i.test(t)) continue;
+    if (/EXPLAIN:|CURRENT MESSAGE|system-reminder|PAI ALGORITHM|TaskCreate|ISC\/|##\s|🗣️|🤖|▶ PATH/.test(t.slice(0, 130))) continue;
+    const first = t.split(/(?<=[.!?])\s/)[0];
+    return clip(first || t, 120);
+  }
+  return '';
+}
 // Issues: real ⚠️ shortcomings from the session's FINAL verdict region — last
 // clean occurrence first, skipping anything that looks like code.
 function extractIssues(file) {
@@ -231,11 +246,11 @@ function extractExchanges(file) {
 
 // ── indexing ─────────────────────────────────────────────────────────────────
 const upsert = db.prepare(`
-  INSERT INTO work_efforts (id,project,date,mtime,size,topic,version,requested,produced,issues,evaluation,eval_ok,item_count)
-  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+  INSERT INTO work_efforts (id,project,date,mtime,size,topic,version,requested,produced,delivered,issues,evaluation,eval_ok,item_count)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   ON CONFLICT(id) DO UPDATE SET project=excluded.project, date=excluded.date, mtime=excluded.mtime,
     size=excluded.size, topic=excluded.topic, version=excluded.version, requested=excluded.requested,
-    produced=excluded.produced, issues=excluded.issues, evaluation=excluded.evaluation,
+    produced=excluded.produced, delivered=excluded.delivered, issues=excluded.issues, evaluation=excluded.evaluation,
     eval_ok=excluded.eval_ok, item_count=excluded.item_count`);
 const delItems = db.prepare(`DELETE FROM functional_items WHERE effort_id=?`);
 const insItem  = db.prepare(`INSERT INTO functional_items (effort_id,seq,kind,text) VALUES (?,?,?,?)`);
@@ -264,13 +279,24 @@ function indexSession(name, repo, version, f) {
              : produced.length ? 'Complete — shipped ' + produced.length + ' commit' + (produced.length === 1 ? '' : 's')
              : 'Complete — no outstanding items';
   }
+  // Delivered (succinct, never empty): commit summary → else closing SOL summary →
+  // else first substantive response → else a clean "no commit" label.
+  let delivered;
+  if (produced.length) {
+    delivered = produced.length === 1 ? produced[0] : produced[0] + ' (+' + (produced.length - 1) + ' more)';
+  } else {
+    const sol = exchanges.filter((e) => e.role === 'assistant').pop();
+    const noisy = (x) => !x || /EXPLAIN:|CURRENT MESSAGE|system-reminder|PAI ALGORITHM|TaskCreate|🤖/.test(x) || /^['"`,*\[(]/.test(x.trim()) || CODEY.test(x.slice(0, 90));
+    let cand = (sol && !noisy(sol.text)) ? sol.text : firstResponse(f.file);
+    delivered = (cand && !noisy(cand)) ? clip(cand, 120) : 'Response / advice provided — no code committed';
+  }
   const items = [];
   requested.forEach((t) => items.push(['requested', t]));
   produced.forEach((t)  => items.push(['produced', t]));
   (outstanding ? outstanding.split(' • ') : []).forEach((t) => { if (t) items.push(['outstanding', t]); });
   upsert.run(f.id, name, fmtDate(f.mtime), Math.round(f.mtime), f.size,
     sessionTopic(f.file, f.id, requested), version, requested.join(' • '), produced.join(' • '),
-    outstanding, evalText, evalOk, items.length);
+    delivered, outstanding, evalText, evalOk, items.length);
   delItems.run(f.id); items.forEach(([k, t], i) => insItem.run(f.id, i, k, t));
   delExch.run(f.id);  exchanges.forEach((e, i) => insExch.run(f.id, i, e.role, e.text));
   return true;
@@ -307,7 +333,7 @@ function queryProjects(range) {
 function rowToSession(r) {
   return { date: r.date, topic: r.topic, action: r.requested || '—', status: r.evaluation || '—',
     committed: r.produced || '', id: r.id, project: r.project, version: r.version,
-    requested: r.requested, produced: r.produced, issues: r.issues, evaluation: r.evaluation, eval_ok: r.eval_ok };
+    requested: r.requested, produced: r.produced, delivered: r.delivered, issues: r.issues, evaluation: r.evaluation, eval_ok: r.eval_ok };
 }
 function queryProject(name, range) {
   ensureIndex();
