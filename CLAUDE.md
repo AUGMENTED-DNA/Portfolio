@@ -7,4 +7,5 @@ Personal portfolio website — new effort starts here at root.
 - Run it: `cd v1 && node server.js` (port 3000)
 
 ## Notes
-- v1.6
+- v4.1 — Work History web app (`server.js`, port 4040). Run: `node server.js`
+- Legacy orbital Electron launcher remains in `main.js` (`npm start`)

@@ -1,7 +1,7 @@
 {
   "name": "pai-launcher",
-  "version": "2.0.0",
-  "description": "PAI orbital project launcher — circular Electron widget",
+  "version": "4.1.0",
+  "description": "PAI Portfolio — Work History web app (server.js, port 4040); legacy orbital Electron launcher in main.js",
   "main": "main.js",
   "scripts": {
     "start": "npx --yes electron .",

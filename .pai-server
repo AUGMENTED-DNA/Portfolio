@@ -1,4 +1,4 @@
 LABEL=Portfolio
 PORT=4040
-BG_CMD=NODE_OPTIONS='--max-old-space-size=512' node /mnt/c/Users/dmcneill/Projects/Portfolio/server.js
+BG_CMD=NODE_OPTIONS='--max-old-space-size=512' node /home/dmcneill/Projects/Portfolio/server.js
 LOG=/tmp/portfolio-server.log
