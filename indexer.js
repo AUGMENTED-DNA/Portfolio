@@ -435,11 +435,81 @@ function extractIssues(file) {
 // caller below scored that as Complete. Matching the 🗣️ marker itself rather
 // than whatever follows it means the next rename cannot reintroduce this.
 const VOICE_MARK = '🗣️';
+// v4.17: the verdict now comes from the ⏳ INCOMPLETE IN THIS SESSION ledger,
+// which CLAUDE.md requires on every response and VoiceFormatGuard.hook.ts blocks
+// a response for omitting. A statement written by rule beats one written by
+// chance.
+//
+// MEASURED, which is why this changed: the old test required the literal string
+// 'all the work was completed' near the last 🗣️ mark. That phrase appears in 4
+// of 1,075 transcripts (0.37%) and produced ZERO Complete verdicts — every
+// "Complete" in the database came from the commit-evidence fallback in
+// indexSession, meaning completion silently meant "did this session commit
+// code". Sampling the 74 substantial sessions showed no phrase worth keying on:
+// live 13%, verified/ready 10%, fixed/done/complete 8%, and 35% carry no voice
+// line at all. Closing lines are summaries of what happened, not verdicts, so
+// no keyword list could work — the fix had to be a marker written on purpose.
+const LEDGER_MARK = 'INCOMPLETE IN THIS SESSION';
 function extractEvaluation(file) {
   const blob = fileBlob(file);
+
+  // A real ledger BEGINS A LINE. Two weaker anchors were tried and both failed
+  // against real transcripts, which is why this one is line-based:
+  //   1. lastIndexOf(marker) scored THIS session Complete, because its last
+  //      match was the CLAUDE.md rule's own worked example ("…nothing
+  //      outstanding — everything asked for…") quoted while writing the rule.
+  //   2. Anchoring on the last 🗣️ then scanning forward scored it Unknown,
+  //      because the last 🗣️ in the file is a documentation mention, not the
+  //      closing line.
+  // In this session's transcript the marker appears 101 times; only 25 begin a
+  // line, and those 25 are the actual ledgers. Everything else is prose about
+  // ledgers, quoted rule text, or — unavoidably — this function's own source.
+  // The COLON is load-bearing. Without it this matched its own source code and
+  // the test scripts written against it — 39 matches in this session's
+  // transcript versus 25 real ledgers, and the newest "match" was a regex
+  // literal from a debug script. A real ledger always writes the heading with a
+  // colon; a code or prose reference to the heading does not.
+  const hits = [...blob.matchAll(/\\n⏳ INCOMPLETE IN THIS SESSION:/g)].map((m) => m.index);
+  if (hits.length) {
+    const tail = blob.slice(hits[hits.length - 1], hits[hits.length - 1] + 1200);
+
+    // ITEMS DECIDE FIRST. Testing the "nothing outstanding" wording first scored
+    // this session Complete while its closing ledger listed three open items —
+    // the phrase appeared later in the 1200-char window (in an approval dialog
+    // quoting the rule) and won over the ledger's own contents. A ledger that
+    // lists work is incomplete no matter what text follows it.
+    const items = [...tail.matchAll(/[-•]\s*([^\\\n"]{6,160}?)\s*—\s*waiting on\s+(you|PAI)/gi)]
+      .map((m) => m[1].trim() + ' (waiting on ' + m[2] + ')');
+    if (items.length) {
+      // `src` marks where the verdict came from. indexSession used to sniff the
+      // TEXT for the word "ledger" to decide precedence, which silently failed
+      // for this branch because its wording never contains that word — so every
+      // ledger-derived Incomplete fell through to the old prose heuristic. A
+      // flag cannot drift out of step with the wording the way a substring can.
+      return { text: 'Incomplete — ' + items.length + ' item' + (items.length === 1 ? '' : 's')
+                   + ' left: ' + clip(items.join(' • '), 200), ok: 0, src: 'ledger' };
+    }
+    // Only with no items does the one-line "nothing outstanding" form apply, and
+    // only on the heading's OWN line — not anywhere in the window. Split on the
+    // ESCAPED newline: a .jsonl message body holds a newline as the two
+    // characters \ and n, so a /^…/ anchor tested against the raw slice never
+    // matches and every cleanly-finished session scored Unknown.
+    // Find the heading's own line by its CONTENT, not by position: the tail
+    // begins AT the escaped newline, so element [0] is the empty string before
+    // it and every cleanly-finished session scored Unknown.
+    const headLine = tail.split('\\n').find((s) => s.includes('INCOMPLETE IN THIS SESSION')) || '';
+    if (/nothing outstanding/i.test(headLine)) {
+      return { text: 'Complete — the closing ledger recorded nothing outstanding', ok: 1, src: 'ledger' };
+    }
+    // Heading present but unreadable — do NOT guess in either direction.
+    return { text: 'Unknown — a ledger was written but its items could not be read', ok: -1, src: 'ledger' };
+  }
+
+  // Pre-ledger transcripts (1,208 of them) never recorded a verdict at all. The
+  // old 'Not completed' wording is still honoured so anything that did record
+  // one keeps it; absence stays Unknown rather than being scored either way.
   const solAt = blob.lastIndexOf(VOICE_MARK);
   const tail = solAt >= 0 ? blob.slice(solAt, solAt + 1400) : '';
-  if (tail.includes('all the work was completed')) return { text: 'Complete — delivered acceptably', ok: 1 };
   if (/Not completed/i.test(tail)) {
     const m = tail.match(/Not completed:?\s*([^.`"\\]+)/i);
     const txt = m && m[1].trim() && !CODEY.test(m[1]) ? clip(m[1], 150) : 'see session detail';
@@ -506,7 +576,22 @@ function indexSession(name, repo, version, f) {
   // could not read them. Absence of evidence was being recorded as evidence of
   // completion. Unknown is now its own state and is never claimed as done.
   let evalOk, evalText, outstanding = '';
-  if (evaln.ok === 0 || issues.length) {
+  // v4.17: the LEDGER OUTRANKS the ⚠️-scraping heuristic. Previously
+  // `evaln.ok === 0 || issues.length` ran first, so a session whose closing
+  // ledger said "nothing outstanding" was still stamped Incomplete because a ⚠️
+  // appeared somewhere in its transcript — and where the ledger DID say
+  // incomplete, its item list was discarded in favour of the literal word
+  // "Incomplete". MEASURED: after the v4.17 rebuild, 0 of 554 sessions carried a
+  // ledger-sourced verdict despite the detector working correctly in isolation.
+  // The ledger is written by rule and enforced by a Stop hook; `issues` is
+  // inferred from prose. A deliberate statement beats an inference about one.
+  const fromLedger = evaln.src === 'ledger';
+  if (fromLedger && evaln.ok === 1) {
+    evalOk = 1; evalText = evaln.text;
+  } else if (fromLedger && evaln.ok === 0) {
+    evalOk = 0; evalText = 'Incomplete';
+    outstanding = clip(evaln.text.replace(/^Incomplete\s*—\s*/i, ''), 200);
+  } else if (evaln.ok === 0 || issues.length) {
     evalOk = 0; evalText = 'Incomplete';
     outstanding = issues.join(' • ') || clip(evaln.text.replace(/^Incomplete[^:]*:?\s*/i, ''), 150);
   } else if (evaln.ok === 1) {

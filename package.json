@@ -1,6 +1,6 @@
 {
   "name": "pai-launcher",
-  "version": "4.16.0",
+  "version": "4.17.0",
   "description": "PAI Portfolio — Work History web app (server.js, port 4040); legacy orbital Electron launcher in main.js",
   "main": "main.js",
   "scripts": {
