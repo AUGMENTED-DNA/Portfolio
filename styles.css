@@ -1,14 +1,133 @@
+/* ═══ Theme tokens ══════════════════════════════════════════════════════════
+   Dark is the default. Adding data-theme="light" to <html> swaps every colour
+   in this file — no other rule needs to know a theme exists. theme.js sets that
+   attribute before first paint, so there is no flash of the wrong theme.
+
+   Colours with transparency are stored as bare "r,g,b" triplets and consumed as
+   rgba(var(--token), .25). That keeps each rule's own alpha (which encodes depth
+   and emphasis) while letting the theme swap only the underlying hue.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --rgb-accent: 59,91,219;
+  --rgb-accent-bright: 92,124,250;
+  --rgb-accent-hover: 76,110,240;
+  --rgb-link: 138,180,248;
+  --rgb-surface: 20,22,40;
+  --rgb-surface-hover: 40,44,80;
+  --rgb-row-hover: 40,48,90;
+  --rgb-chrome: 10,12,20;
+  --rgb-tooltip: 10,10,20;
+  --rgb-card: 20,24,44;
+  --rgb-card-head: 30,36,66;
+  --rgb-group-row: 20,26,52;
+  --rgb-assistant: 20,40,32;
+  --rgb-outstanding: 60,40,20;
+  --rgb-muted: 150,165,210;
+  --rgb-muted-blue: 150,170,225;
+  --rgb-label: 150,170,230;
+  --rgb-btn-text: 170,185,255;
+  --rgb-nav-text: 160,180,255;
+  --rgb-text-hi: 200,212,255;
+  --rgb-text-mid: 200,210,240;
+  --rgb-meta: 140,160,215;
+  --rgb-meta-dim: 140,155,200;
+  --rgb-sep: 120,130,170;
+  --rgb-date: 155,170,215;
+  --rgb-num: 180,195,240;
+  --rgb-empty: 160,170,200;
+  --rgb-body-text: 214,222,255;
+  --rgb-green: 61,220,132;
+  --rgb-green-text: 150,205,170;
+  --rgb-amber: 240,184,110;
+
+  --c-bg: #0a0c14;
+  --c-bg-frame: #07071a;
+  --c-on-accent: #fff;
+  --c-text: #c8d4ff;
+  --c-text-strong: #cdd8ff;
+  --c-text-bright: #d6deff;
+  --c-text-max: #e8eeff;
+  --c-text-nav-all: #cbd8ff;
+  --c-link: #8ab4f8;
+  --c-project: #9fb4ff;
+  --c-group: #9db4ff;
+  --c-brand: #3b5bdb;
+  --c-drop: #5c7cfa;
+  --c-green: #3ddc84;
+  --c-green-soft: #b9f4d2;
+  --c-green-mid: #6fd3a0;
+  --c-amber: #f0b86e;
+  --c-warn: #fbbf24;
+  --c-error: #fca5a5;
+  --color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --rgb-accent: 59,91,219;
+  --rgb-accent-bright: 59,91,219;
+  --rgb-accent-hover: 44,84,214;
+  --rgb-link: 21,80,200;
+  --rgb-surface: 226,232,244;
+  --rgb-surface-hover: 205,215,238;
+  --rgb-row-hover: 200,212,240;
+  --rgb-chrome: 240,244,250;
+  --rgb-tooltip: 255,255,255;
+  --rgb-card: 245,247,252;
+  --rgb-card-head: 232,237,247;
+  --rgb-group-row: 224,231,246;
+  --rgb-assistant: 226,244,235;
+  --rgb-outstanding: 253,242,224;
+  --rgb-muted: 84,98,136;
+  --rgb-muted-blue: 82,97,140;
+  --rgb-label: 55,72,128;
+  --rgb-btn-text: 52,68,116;
+  --rgb-nav-text: 60,76,124;
+  --rgb-text-hi: 34,46,84;
+  --rgb-text-mid: 40,52,88;
+  --rgb-meta: 88,102,142;
+  --rgb-meta-dim: 92,104,140;
+  --rgb-sep: 120,130,160;
+  --rgb-date: 62,78,120;
+  --rgb-num: 40,52,92;
+  --rgb-empty: 88,98,128;
+  --rgb-body-text: 28,36,64;
+  --rgb-green: 16,130,74;
+  --rgb-green-text: 20,110,66;
+  --rgb-amber: 150,90,8;
+
+  --c-bg: #f6f8fc;
+  --c-bg-frame: #eef2f8;
+  --c-on-accent: #fff;
+  --c-text: #1c2438;
+  --c-text-strong: #202a44;
+  --c-text-bright: #16203a;
+  --c-text-max: #0d1526;
+  --c-text-nav-all: #1e2a48;
+  --c-link: #1550c8;
+  --c-project: #24409c;
+  --c-group: #253f9a;
+  --c-brand: #2b46b4;
+  --c-drop: #2b57d4;
+  --c-green: #0f7a45;
+  --c-green-soft: #0b6438;
+  --c-green-mid: #12744a;
+  --c-amber: #96600a;
+  --c-warn: #8a5d04;
+  --c-error: #b91c1c;
+  --color-scheme: light;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
   width: 100%; height: 100%;
-  background: #0a0c14;
+  background: var(--c-bg);
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, sans-serif;
   /* Prevent text selection during drag */
   user-select: none;
   -webkit-user-select: none;
-  color: #c8d4ff;
+  color: var(--c-text);
 }
 
 #app { display: flex; width: 100vw; height: 100vh; }
@@ -16,49 +135,69 @@ html, body {
 /* ─── Left navigation ─────────────────────────────────────────────────────── */
 #side-nav {
   width: 184px; flex: 0 0 184px;
-  background: rgba(10,12,20,0.98);
-  border-right: 1px solid rgba(59,91,219,0.30);
+  background: rgba(var(--rgb-chrome), 0.98);
+  border-right: 1px solid rgba(var(--rgb-accent), 0.30);
   display: flex; flex-direction: column;
   padding: 10px 8px; gap: 4px;
   z-index: 100;
+  /* v4.2: do NOT transition width/flex-basis/padding here. Verified in real
+     Chrome: with those layout properties transitioned, #app.nav-collapsed's
+     width: 46px never lands and the column stays at 184px. Collapse snaps. */
+  transition: background .18s ease, border-color .18s ease;
 }
 #brand {
   display: flex; align-items: center; gap: 8px;
   background: none; border: none; cursor: pointer;
-  color: #8ab4f8; font-family: inherit;
+  color: var(--c-link); font-family: inherit;
   padding: 6px 8px 12px; margin-bottom: 6px;
-  border-bottom: 1px solid rgba(59,91,219,0.20);
+  border-bottom: 1px solid rgba(var(--rgb-accent), 0.20);
   text-align: left; width: 100%;
 }
-#brand .brand-mark { font-size: 20px; color: #3b5bdb; }
+/* display:flex added with the briefcase mark. The mark used to be the text
+   character ⬢ and sat on the text baseline; an inline <svg> in its place is
+   treated as inline text too, which leaves a few px of descender gap under it
+   and pushes the glyph visibly high against "PAI Portfolio". flex removes the
+   baseline entirely. font-size stays because it is what sizes the old ⬢ if the
+   SVG ever fails to render. */
+#brand .brand-mark { font-size: 20px; color: var(--c-brand); display: flex; align-items: center; }
 #brand .brand-text { font-size: 14px; font-weight: 600; letter-spacing: .3px; }
-#brand:hover .brand-text { color: #fff; }
+#brand:hover .brand-text { color: var(--c-on-accent); }
 
 .nav-links { display: flex; flex-direction: column; gap: 3px; }
 .nav-item {
-  background: rgba(20,22,40,0.6);
-  color: rgba(160,180,255,0.6);
+  background: rgba(var(--rgb-surface), 0.6);
+  color: rgba(var(--rgb-nav-text), 0.6);
   border: 1px solid transparent;
   padding: 7px 10px; border-radius: 5px;
   cursor: pointer; font-size: 12.5px; font-family: inherit;
   text-align: left; transition: background .15s, color .15s;
 }
-.nav-item:hover:not(.active) { background: rgba(40,44,80,0.8); color: rgba(200,212,255,0.85); }
-.nav-item.active { background: rgba(59,91,219,0.75); color: #fff; border-color: rgba(92,124,250,0.7); }
+.nav-item:hover:not(.active) { background: rgba(var(--rgb-surface-hover), 0.8); color: rgba(var(--rgb-text-hi), 0.85); }
+.nav-item.active { background: rgba(var(--rgb-accent), 0.75); color: var(--c-on-accent); border-color: rgba(var(--rgb-accent-bright), 0.7); }
 
 /* Collapsible Work History project list */
-.wh-arrow { display: inline-block; width: 10px; font-size: 9px; color: rgba(150,170,225,0.8); }
+.wh-arrow { display: inline-block; width: 10px; font-size: 9px; color: rgba(var(--rgb-muted-blue), 0.8); }
 .wh-nav-list { display: flex; flex-direction: column; gap: 2px; padding: 2px 0 4px 16px; }
 .wh-nav-list.hidden { display: none; }
 .wh-nav-item {
-  background: none; border: none; color: rgba(150,170,225,0.72); cursor: pointer;
+  background: none; border: none; color: rgba(var(--rgb-muted-blue), 0.72); cursor: pointer;
   font-family: inherit; font-size: 11px; text-align: left;
   padding: 3px 8px; border-radius: 4px;
   display: flex; justify-content: space-between; gap: 8px;
 }
-.wh-nav-item:hover { background: rgba(40,44,80,0.7); color: #cdd8ff; }
-.wh-nav-item.active { background: rgba(59,91,219,0.5); color: #fff; }
-.wh-nav-count { color: rgba(140,155,200,0.7); font-variant-numeric: tabular-nums; }
+.wh-nav-item:hover { background: rgba(var(--rgb-surface-hover), 0.7); color: var(--c-text-strong); }
+.wh-nav-item.active { background: rgba(var(--rgb-accent), 0.5); color: var(--c-on-accent); }
+.wh-nav-count { color: rgba(var(--rgb-meta-dim), 0.7); font-variant-numeric: tabular-nums; }
+/* Heading row for the nav list — names the otherwise-unlabelled session count.
+   Matches .wh-nav-item's padding and flex so the columns line up beneath it. */
+.wh-nav-head {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 3px 8px; margin-bottom: 2px;
+  font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(var(--rgb-muted-blue), 0.5);
+  border-bottom: 1px solid rgba(var(--rgb-muted-blue), 0.18);
+}
+.wh-nav-head .wh-nav-count { color: rgba(var(--rgb-muted-blue), 0.5); }
 
 /* ─── Main content ────────────────────────────────────────────────────────── */
 #main { position: relative; flex: 1 1 auto; height: 100vh; overflow: hidden; }
@@ -72,9 +211,9 @@ html, body {
 
 #tooltip {
   position: fixed;
-  background: rgba(10,10,20,0.92);
-  color: #8ab4f8;
-  border: 1px solid rgba(138,180,248,0.35);
+  background: rgba(var(--rgb-tooltip), 0.92);
+  color: var(--c-link);
+  border: 1px solid rgba(var(--rgb-link), 0.35);
   border-radius: 6px;
   padding: 5px 11px;
   font-size: 12px;
@@ -87,201 +226,561 @@ html, body {
 #tooltip.visible { opacity: 1; }
 
 #v1-frame, #v18-frame { width: 100%; height: 100%; border: none; }
-#v18-frame { background: #07071a; }
+#v18-frame { background: var(--c-bg-frame); }
 
 /* ─── Breadcrumbs ─────────────────────────────────────────────────────────── */
 #crumbs {
   flex: 0 0 34px; display: flex; align-items: center; gap: 6px;
   padding: 0 16px; font-size: 12.5px;
-  background: rgba(10,12,20,0.96);
-  border-bottom: 1px solid rgba(59,91,219,0.25);
-  color: rgba(160,180,255,0.6);
+  background: rgba(var(--rgb-chrome), 0.96);
+  border-bottom: 1px solid rgba(var(--rgb-accent), 0.25);
+  color: rgba(var(--rgb-nav-text), 0.6);
 }
 #crumbs .crumb {
-  background: none; border: none; color: #8ab4f8; cursor: pointer;
+  background: none; border: none; color: var(--c-link); cursor: pointer;
   font-family: inherit; font-size: 12.5px; padding: 2px;
 }
-#crumbs .crumb:hover { color: #fff; text-decoration: underline; }
-#crumbs .crumb.current { color: rgba(200,212,255,0.85); cursor: default; text-decoration: none; }
-#crumbs .sep { color: rgba(120,130,170,0.6); }
+#crumbs .crumb:hover { color: var(--c-on-accent); text-decoration: underline; }
+#crumbs .crumb.current { color: rgba(var(--rgb-text-hi), 0.85); cursor: default; text-decoration: none; }
+#crumbs .sep { color: rgba(var(--rgb-sep), 0.6); }
 
 /* ─── Work-history tables ─────────────────────────────────────────────────── */
 .wh-wrap { padding: 16px 20px 28px; }
-.wh-h { font-size: 15px; color: #cdd8ff; margin-bottom: 4px; font-weight: 600; }
-.wh-sub { font-size: 11.5px; color: rgba(150,165,210,0.7); margin-bottom: 12px; }
+.wh-h { font-size: 15px; color: var(--c-text-strong); margin-bottom: 4px; font-weight: 600; }
+.wh-sub { font-size: 11.5px; color: rgba(var(--rgb-muted), 0.7); margin-bottom: 12px; }
 table.wh { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-table.wh th, table.wh td { text-align: left; padding: 6px 12px; border-bottom: 1px solid rgba(59,91,219,0.14); }
+table.wh th, table.wh td { text-align: left; padding: 6px 12px; border-bottom: 1px solid rgba(var(--rgb-accent), 0.14); }
 table.wh th {
-  color: rgba(150,170,230,0.85); font-weight: 600; font-size: 11px;
+  color: rgba(var(--rgb-label), 0.85); font-weight: 600; font-size: 11px;
   text-transform: uppercase; letter-spacing: .5px;
-  position: sticky; top: 0; background: #0a0c14;
+  position: sticky; top: 0; background: var(--c-bg);
 }
 table.wh tbody tr.clickable { cursor: pointer; }
-table.wh tbody tr.clickable:hover { background: rgba(40,48,90,0.55); }
-table.wh td.num { text-align: right; color: rgba(180,195,240,0.9); font-variant-numeric: tabular-nums; }
-table.wh td.ver { color: rgba(150,170,225,0.85); font-variant-numeric: tabular-nums; white-space: nowrap; }
-table.wh td.topic  { color: #d6deff; }
-table.wh td.action { color: rgba(200,210,240,0.85); }
-table.wh td.status { color: rgba(150,205,170,0.92); }
+table.wh tbody tr.clickable:hover { background: rgba(var(--rgb-row-hover), 0.55); }
+table.wh td.num { text-align: right; color: rgba(var(--rgb-num), 0.9); font-variant-numeric: tabular-nums; }
+/* v4.8: the heading has always carried the .num class (see the header builder in
+   app.js) but no rule ever matched it, so numeric columns had right-aligned
+   figures sitting under a left-aligned title — the heading floated off to the
+   left of the data it named. The cells were right-aligned on the line above;
+   this is the missing half of that pair. */
+table.wh th.num { text-align: right; }
+table.wh td.ver { color: rgba(var(--rgb-muted-blue), 0.85); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.wh td.topic  { color: var(--c-text-bright); }
+table.wh td.action { color: rgba(var(--rgb-text-mid), 0.85); }
+table.wh td.status { color: rgba(var(--rgb-green-text), 0.92); }
 table.wh td.action, table.wh td.status { white-space: normal; }
-table.wh td.date { color: rgba(150,165,210,0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.wh-topic { color: #d6deff; }
-.wh-empty { color: rgba(160,170,200,0.7); padding: 20px; font-size: 13px; }
+table.wh td.date { color: rgba(var(--rgb-muted), 0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Project divider rows shown in All Projects view when sorting by Project A-Z.
+   Sticky just under the sticky table header (which occupies the first 27px). */
+table.wh tbody tr.wh-group td {
+  background: rgba(var(--rgb-group-row), 0.95); color: var(--c-group);
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  padding: 5px 12px; border-bottom: 1px solid rgba(var(--rgb-accent-bright), 0.35);
+  position: sticky; top: 27px;
+}
+table.wh tbody tr.wh-group { cursor: default; }
+.wh-topic { color: var(--c-text-bright); }
+.wh-empty { color: rgba(var(--rgb-empty), 0.7); padding: 20px; font-size: 13px; }
+
+/* ─── Prioritise Projects (v4.4) ──────────────────────────────────────────── */
+#view-priority:not(.hidden) { display: flex; flex-direction: column; }
+#prio-content { flex: 1 1 auto; overflow: auto; min-height: 0; }
+#prio-bar {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  padding: 8px 16px; background: rgba(var(--rgb-chrome), 0.96);
+  border-bottom: 1px solid rgba(var(--rgb-accent), 0.25); font-size: 12px;
+}
+#prio-bar .prio-hint { color: rgba(var(--rgb-muted), 0.55); font-size: 11px; }
+.prio-btn {
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.75);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
+  padding: 3px 12px; cursor: pointer; font: inherit;
+  transition: background .15s, color .15s;
+}
+.prio-btn:hover { background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong); }
+.prio-btn.prio-save { background: rgba(var(--rgb-accent), 0.78); color: var(--c-on-accent); border-color: rgba(var(--rgb-accent-bright), 0.7); }
+.prio-btn.prio-save:hover { background: rgba(var(--rgb-accent-hover), 0.9); }
+.prio-err { color: var(--c-error) !important; }
+table.prio-table tbody tr.prio-row { cursor: grab; }
+table.prio-table tbody tr.prio-row:hover { background: rgba(var(--rgb-row-hover), 0.45); }
+tr.prio-row.dragging { opacity: .4; }
+tr.prio-row.drop-target td { border-top: 2px solid var(--c-drop); }
+.prio-rank {
+  width: 52px; background: rgba(var(--rgb-surface), 0.9); color: var(--c-text-strong);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
+  padding: 2px 4px; font: inherit; text-align: right;
+}
+.prio-arrow {
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.75);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
+  padding: 1px 7px; margin-right: 3px; cursor: pointer; font: inherit;
+}
+.prio-arrow:disabled { opacity: .3; cursor: default; }
+.prio-arrow:hover:not(:disabled) { background: rgba(var(--rgb-accent), 0.6); color: var(--c-on-accent); }
+/* Projects carrying unfinished work — the signal the ranking is meant to act on. */
+td.has-out { color: var(--c-warn) !important; font-weight: 600; }
 
 /* ─── Work-history date filter ────────────────────────────────────────────── */
 #wh-filter {
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
   padding: 8px 16px;
-  background: rgba(10,12,20,0.96);
-  border-bottom: 1px solid rgba(59,91,219,0.25);
+  background: rgba(var(--rgb-chrome), 0.96);
+  border-bottom: 1px solid rgba(var(--rgb-accent), 0.25);
   font-size: 12px;
 }
-#wh-filter .wh-f-label { color: rgba(150,165,210,0.7); }
+#wh-filter .wh-f-label { color: rgba(var(--rgb-muted), 0.7); }
 #wh-filter button.wh-f-preset {
-  background: rgba(20,22,40,0.9); color: rgba(170,185,255,0.7);
-  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
   padding: 3px 10px; cursor: pointer; font: inherit;
   transition: background .15s, color .15s;
 }
 #wh-filter button.wh-f-preset.active {
-  background: rgba(59,91,219,0.78); color: #fff; border-color: rgba(92,124,250,0.7);
+  background: rgba(var(--rgb-accent), 0.78); color: var(--c-on-accent); border-color: rgba(var(--rgb-accent-bright), 0.7);
 }
 #wh-filter button.wh-f-preset:hover:not(.active) {
-  background: rgba(40,44,80,0.9); color: #cdd8ff;
+  background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong);
 }
 #wh-filter input[type=date] {
-  background: rgba(20,22,40,0.9); color: #cdd8ff;
-  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
-  padding: 2px 6px; font: inherit; color-scheme: dark;
+  background: rgba(var(--rgb-surface), 0.9); color: var(--c-text-strong);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
+  padding: 2px 6px; font: inherit; color-scheme: var(--color-scheme);
 }
-#wh-filter .wh-f-sep { color: rgba(120,130,170,0.6); }
+/* Sort buttons — same treatment as the Status/View groups beside them, so the
+   active sort is visible at a glance rather than rendering as bare text. */
+#wh-filter button.wh-f-sort {
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
+  padding: 3px 10px; cursor: pointer; font: inherit;
+  transition: background .15s, color .15s;
+}
+#wh-filter button.wh-f-sort.active {
+  background: rgba(var(--rgb-accent), 0.78); color: var(--c-on-accent); border-color: rgba(var(--rgb-accent-bright), 0.7);
+}
+#wh-filter button.wh-f-sort:hover:not(.active) { background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong); }
+#wh-filter .wh-f-sep { color: rgba(var(--rgb-sep), 0.6); }
 #wh-filter .wh-f-spacer { flex: 1; }
-#wh-filter .wh-f-summary { color: rgba(150,165,210,0.6); font-size: 11px; white-space: nowrap; }
+#wh-filter .wh-f-summary { color: rgba(var(--rgb-muted), 0.6); font-size: 11px; white-space: nowrap; }
 
 /* ─── Work-history folder scope toggle (white = by-project, green = all) ─────── */
-.wh-folder { display: inline-block; color: #e8eeff; font-size: 13px; transition: color .15s; }
-.wh-folder.all { color: #3ddc84; }
+.wh-folder { display: inline-block; color: var(--c-text-max); font-size: 13px; transition: color .15s; }
+.wh-folder.all { color: var(--c-green); }
 
 /* ─── Work-history detail-level toggle (segmented, green = focus levels) ─────── */
 #wh-filter .wh-f-level {
-  background: rgba(20,22,40,0.9); color: rgba(170,185,255,0.7);
-  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
   padding: 3px 10px; cursor: pointer; font: inherit;
   transition: background .15s, color .15s;
 }
 #wh-filter .wh-f-level.active {
-  background: rgba(61,220,132,0.22); color: #b9f4d2; border-color: rgba(61,220,132,0.5);
+  background: rgba(var(--rgb-green), 0.22); color: var(--c-green-soft); border-color: rgba(var(--rgb-green), 0.5);
 }
-#wh-filter .wh-f-level:hover:not(.active) { background: rgba(40,44,80,0.9); color: #cdd8ff; }
+#wh-filter .wh-f-level:hover:not(.active) { background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong); }
 
 /* ─── Work-history detail rows: session id + title, project, commit ─────────── */
 table.wh td.wh-sess { white-space: normal; min-width: 150px; }
-.wh-sess-id { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 10.5px; color: rgba(140,160,215,0.75); }
-.wh-sess-title { color: #d6deff; font-size: 12px; }
-table.wh td.wh-proj { color: #9fb4ff; white-space: nowrap; font-weight: 600; }
-table.wh td.wh-commit { color: rgba(150,205,170,0.85); white-space: normal; font-size: 11.5px; }
+.wh-sess-id { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 10.5px; color: rgba(var(--rgb-meta), 0.75); }
+.wh-sess-title { color: var(--c-text-bright); font-size: 12px; }
+table.wh td.wh-proj { color: var(--c-project); white-space: nowrap; font-weight: 600; }
+table.wh td.wh-commit { color: rgba(var(--rgb-green-text), 0.85); white-space: normal; font-size: 11.5px; }
+
+/* v4.6: the Sessions screen is a scanning list — one row per session, read top
+   to bottom to find a specific one. 11px type and 3px row padding fit roughly
+   40% more sessions per screen than the roll-up's spacing allows. Scoped to
+   .wh-compact so the roll-up table keeps its own comfortable size. */
+table.wh.wh-compact { font-size: 11px; }
+table.wh.wh-compact th, table.wh.wh-compact td { padding: 3px 8px; }
+table.wh.wh-compact td.wh-auto { color: rgba(var(--rgb-text-mid), 0.8); max-width: 420px; }
+/* v4.10: a drill-in view (Functional Items, Raw) with no session open. Dimmed
+   and unclickable rather than removed, so the view stays discoverable while it
+   is honestly marked as not applicable yet.
+   NEVER strike this through. v4.9 did, and that was wrong: strikethrough means
+   deleted or invalid, so it said these views no longer exist when in fact they
+   are one click away. Reduced opacity plus a not-allowed cursor is the whole
+   vocabulary a temporarily-unavailable control needs. */
+#wh-filter button.wh-f-level.wh-f-disabled {
+  opacity: .38; cursor: not-allowed;
+}
+#wh-filter button.wh-f-level.wh-f-disabled:hover { background: transparent; }
+
+/* v4.8: the hidden-fragment notice. Always present above the Sessions table,
+   stating the count in both directions, so a filtered list can never be
+   mistaken for the whole list. */
+.wh-frag-note { display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  font-size: 11px; color: rgba(var(--rgb-muted), 0.8); }
+.wh-frag-toggle { font-size: 10.5px; padding: 2px 8px; cursor: pointer;
+  border: 1px solid rgba(var(--rgb-accent), 0.3); border-radius: 3px;
+  background: transparent; color: rgba(var(--rgb-muted-blue), 0.95); }
+.wh-frag-toggle:hover { background: rgba(var(--rgb-row-hover), 0.55); }
+
+table.wh td.wh-sid {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  color: rgba(var(--rgb-meta), 0.9); white-space: nowrap;
+}
 
 /* ─── Work-history 3-level drill-down (v3.6) ──────────────────────────────────── */
 /* Level 3 — roll-up table: Requested/Produced wrap; evaluation badge */
-table.wh td.wh-req  { color: rgba(200,210,240,0.88); white-space: normal; max-width: 340px; }
-table.wh td.wh-prod { color: rgba(150,205,170,0.85); white-space: normal; max-width: 300px; font-size: 11.5px; }
+table.wh td.wh-req  { color: rgba(var(--rgb-text-mid), 0.88); white-space: normal; max-width: 340px; }
+table.wh td.wh-prod { color: rgba(var(--rgb-green-text), 0.85); white-space: normal; max-width: 300px; font-size: 11.5px; }
 .wh-eval { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; white-space: nowrap; }
-.wh-eval.ok   { color: #3ddc84; }
-.wh-eval.bad  { color: #f0b86e; }
-.wh-eval.none { color: rgba(150,165,210,0.5); }
+/* v4.12: "no verdict" is an absence of information, not a bad outcome — it must
+   not borrow the warning colour that Incomplete uses, or 75% of the list reads
+   as a wall of problems when most of it is simply unread. */
+.wh-eval.unknown { color: rgba(var(--rgb-muted), 0.75); }
+.wh-eval.ok   { color: var(--c-green); }
+.wh-eval.bad  { color: var(--c-amber); }
+.wh-eval.none { color: rgba(var(--rgb-muted), 0.5); }
 
 /* Level 2/1 — effort detail header + roll-up summary card */
 .wh-effort-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .wh-effort-head .wh-h { margin-bottom: 0; }
 .wh-rollup-card {
-  border: 1px solid rgba(59,91,219,0.30); border-radius: 8px;
-  background: rgba(20,24,44,0.55); padding: 10px 16px; margin-bottom: 16px;
+  border: 1px solid rgba(var(--rgb-accent), 0.30); border-radius: 8px;
+  background: rgba(var(--rgb-card), 0.55); padding: 10px 16px; margin-bottom: 16px;
 }
 .wh-rollup-row { display: flex; gap: 12px; padding: 5px 0; font-size: 12.5px; align-items: baseline; }
-.wh-rollup-row + .wh-rollup-row { border-top: 1px solid rgba(59,91,219,0.10); }
-.wh-rollup-k { flex: 0 0 84px; color: rgba(150,170,230,0.85); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .4px; }
-.wh-rollup-v { flex: 1 1 auto; color: #d6deff; white-space: normal; }
-.wh-rollup-v.prod { color: rgba(150,205,170,0.92); }
-.wh-rollup-v.iss  { color: rgba(240,184,110,0.95); }
+.wh-rollup-row + .wh-rollup-row { border-top: 1px solid rgba(var(--rgb-accent), 0.10); }
+.wh-rollup-k { flex: 0 0 84px; color: rgba(var(--rgb-label), 0.85); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .4px; }
+.wh-rollup-v { flex: 1 1 auto; color: var(--c-text-bright); white-space: normal; }
+.wh-rollup-v.prod { color: rgba(var(--rgb-green-text), 0.92); }
+.wh-rollup-v.iss  { color: rgba(var(--rgb-amber), 0.95); }
 
 /* Level-jump buttons inside an effort (Functional Items / Raw) */
 .wh-level-btn {
-  background: rgba(20,22,40,0.9); color: rgba(170,185,255,0.7);
-  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
   padding: 3px 12px; cursor: pointer; font: inherit; font-size: 11.5px; margin-left: 6px;
   transition: background .15s, color .15s;
 }
-.wh-level-btn.active { background: rgba(61,220,132,0.22); color: #b9f4d2; border-color: rgba(61,220,132,0.5); }
-.wh-level-btn:hover:not(.active) { background: rgba(40,44,80,0.9); color: #cdd8ff; }
+.wh-level-btn.active { background: rgba(var(--rgb-green), 0.22); color: var(--c-green-soft); border-color: rgba(var(--rgb-green), 0.5); }
+.wh-level-btn:hover:not(.active) { background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong); }
 
 /* Section heading */
-.wh-section-h { font-size: 12px; color: rgba(150,170,230,0.85); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin: 14px 0 8px; }
+.wh-section-h { font-size: 12px; color: rgba(var(--rgb-label), 0.85); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin: 14px 0 8px; }
 
 /* Level 2 — functional items list */
 .wh-items { display: flex; flex-direction: column; gap: 3px; }
-.wh-fi { display: flex; gap: 10px; padding: 6px 10px; border-radius: 5px; background: rgba(20,22,40,0.45); font-size: 12px; }
+.wh-fi { display: flex; gap: 10px; padding: 6px 10px; border-radius: 5px; background: rgba(var(--rgb-surface), 0.45); font-size: 12px; }
 .wh-fi-kind { flex: 0 0 80px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
-.wh-fi-kind.requested { color: #9fb4ff; }
-.wh-fi-kind.produced  { color: #6fd3a0; }
-.wh-fi-kind.issue     { color: #f0b86e; }
-.wh-fi-text { flex: 1 1 auto; color: #cdd8ff; white-space: normal; }
+.wh-fi-kind.requested { color: var(--c-project); }
+.wh-fi-kind.produced  { color: var(--c-green-mid); }
+.wh-fi-kind.issue     { color: var(--c-amber); }
+/* v4.16: who a still-open item is waiting on, pinned to the right of the row so
+   the column scans vertically. Amber for work that needs YOU, because that is
+   the only column you can act on; neutral for work on me, so my backlog does
+   not shout at you from your own screen. */
+.wh-fi-owner { flex: 0 0 auto; margin-left: auto; font-size: 10.5px; white-space: nowrap;
+  padding: 1px 7px; border-radius: 9px; align-self: center; }
+.wh-fi-owner.human  { color: var(--c-amber); background: rgba(var(--rgb-amber), 0.13); }
+.wh-fi-owner.claude { color: rgba(var(--rgb-muted), 0.85); background: rgba(var(--rgb-surface), 0.7); }
+.wh-fi-owner.done   { color: var(--c-green-mid); background: rgba(var(--rgb-green-text), 0.12); }
+.wh-fi-text { flex: 1 1 auto; color: var(--c-text-strong); white-space: normal; }
 
 /* Level 1 — raw exchanges (prompt ↔ response) */
 .wh-raw { display: flex; flex-direction: column; gap: 8px; }
 .wh-xc { display: flex; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.45; }
-.wh-xc.user { background: rgba(40,48,90,0.40); }
-.wh-xc.assistant { background: rgba(20,40,32,0.40); }
+.wh-xc.user { background: rgba(var(--rgb-row-hover), 0.40); }
+.wh-xc.assistant { background: rgba(var(--rgb-assistant), 0.40); }
 .wh-xc-role { flex: 0 0 56px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.wh-xc.user .wh-xc-role { color: #9fb4ff; }
-.wh-xc.assistant .wh-xc-role { color: #6fd3a0; }
-.wh-xc-text { flex: 1 1 auto; color: rgba(214,222,255,0.92); white-space: normal; }
+.wh-xc.user .wh-xc-role { color: var(--c-project); }
+.wh-xc.assistant .wh-xc-role { color: var(--c-green-mid); }
+.wh-xc-text { flex: 1 1 auto; color: rgba(var(--rgb-body-text), 0.92); white-space: normal; }
 
 /* ─── Work-history v3.7: All-Projects nav · V1 fallback · Status filter · Outstanding ─ */
-.wh-nav-item.wh-nav-all { color: #cbd8ff; font-weight: 600; border-bottom: 1px solid rgba(59,91,219,0.18); margin-bottom: 2px; }
-.wh-nav-item.wh-nav-all:hover { background: rgba(59,91,219,0.30); color: #fff; }
-.wh-nav-item.wh-nav-all.active { background: rgba(59,91,219,0.5); color: #fff; }
+.wh-nav-item.wh-nav-all { color: var(--c-text-nav-all); font-weight: 600; border-bottom: 1px solid rgba(var(--rgb-accent), 0.18); margin-bottom: 2px; }
+.wh-nav-item.wh-nav-all:hover { background: rgba(var(--rgb-accent), 0.30); color: var(--c-on-accent); }
+.wh-nav-item.wh-nav-all.active { background: rgba(var(--rgb-accent), 0.5); color: var(--c-on-accent); }
 
 /* V1 "app isn't running" fallback card */
 .v1-fallback {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; text-align: center;
-  background: #07071a; color: #c8d4ff; padding: 32px; gap: 10px;
+  background: var(--c-bg-frame); color: var(--c-text); padding: 32px; gap: 10px;
 }
-.v1-fallback .v1-fb-title { font-size: 18px; font-weight: 600; color: #8ab4f8; }
-.v1-fallback .v1-fb-body { font-size: 13px; color: rgba(200,212,255,0.78); line-height: 1.7; max-width: 480px; }
+.v1-fallback .v1-fb-title { font-size: 18px; font-weight: 600; color: var(--c-link); }
+.v1-fallback .v1-fb-body { font-size: 13px; color: rgba(var(--rgb-text-hi), 0.78); line-height: 1.7; max-width: 480px; }
 .v1-fallback code {
-  background: rgba(59,91,219,0.18); border: 1px solid rgba(59,91,219,0.30); border-radius: 4px;
-  padding: 1px 6px; font-family: ui-monospace, 'Cascadia Code', monospace; color: #b9f4d2;
+  background: rgba(var(--rgb-accent), 0.18); border: 1px solid rgba(var(--rgb-accent), 0.30); border-radius: 4px;
+  padding: 1px 6px; font-family: ui-monospace, 'Cascadia Code', monospace; color: var(--c-green-soft);
 }
 
 /* Completed (Status) filter buttons */
 #wh-filter button.wh-f-comp {
-  background: rgba(20,22,40,0.9); color: rgba(170,185,255,0.7);
-  border: 1px solid rgba(59,91,219,0.25); border-radius: 4px;
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
   padding: 3px 10px; cursor: pointer; font: inherit; transition: background .15s, color .15s;
 }
-#wh-filter button.wh-f-comp.active { background: rgba(59,91,219,0.78); color: #fff; border-color: rgba(92,124,250,0.7); }
-#wh-filter button.wh-f-comp:hover:not(.active) { background: rgba(40,44,80,0.9); color: #cdd8ff; }
+#wh-filter button.wh-f-comp.active { background: rgba(var(--rgb-accent), 0.78); color: var(--c-on-accent); border-color: rgba(var(--rgb-accent-bright), 0.7); }
+#wh-filter button.wh-f-comp:hover:not(.active) { background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong); }
 
 /* Outstanding / Not delivered section */
-.wh-section-h.wh-out-h { color: #f0b86e; }
-.wh-fi.wh-out-fi { background: rgba(60,40,20,0.35); border-left: 2px solid rgba(240,184,110,0.55); }
+.wh-section-h.wh-out-h { color: var(--c-amber); }
+.wh-fi.wh-out-fi { background: rgba(var(--rgb-outstanding), 0.35); border-left: 2px solid rgba(var(--rgb-amber), 0.55); }
 
 /* V1 frame/fallback visibility toggle (class, not inline style — CSP-safe) */
 #view-v1 .v1-hidden { display: none; }
 
 /* Roll-up v3.9: Date+Project stacked cell · wider Attempted (old Project column reclaimed) */
-.wh-dp-date { color: rgba(150,165,210,0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.wh-dp-proj { color: #9fb4ff; font-weight: 600; font-size: 11px; margin-top: 2px; }
+.wh-dp-date { color: rgba(var(--rgb-muted), 0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wh-dp-proj { color: var(--c-project); font-weight: 600; font-size: 11px; margin-top: 2px; }
 table.wh td.wh-req  { max-width: 480px; }
 table.wh td.wh-prod { max-width: 360px; }
 
 /* Roll-up v4.0: D/S/T metadata column (Date / Time / Session# / Project) + Title-only column */
 table.wh td.wh-dst { white-space: nowrap; vertical-align: top; }
-.wh-dst-d { color: rgba(155,170,215,0.92); font-variant-numeric: tabular-nums; font-size: 12px; }
-.wh-dst-t { color: rgba(150,165,210,0.7);  font-variant-numeric: tabular-nums; font-size: 11px; }
-.wh-dst-s { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 10px; color: rgba(140,160,215,0.6); }
-.wh-dst-p { color: #9fb4ff; font-weight: 600; font-size: 11px; margin-top: 2px; }
+.wh-dst-d { color: rgba(var(--rgb-date), 0.92); font-variant-numeric: tabular-nums; font-size: 12px; }
+.wh-dst-t { color: rgba(var(--rgb-muted), 0.7);  font-variant-numeric: tabular-nums; font-size: 11px; }
+.wh-dst-s { font-family: ui-monospace, 'Cascadia Code', monospace; font-size: 10px; color: rgba(var(--rgb-meta), 0.6); }
+.wh-dst-p { color: var(--c-project); font-weight: 600; font-size: 11px; margin-top: 2px; }
 table.wh td.wh-title { min-width: 150px; max-width: 280px; }
-table.wh td.wh-title .wh-sess-title { color: #d6deff; font-size: 12.5px; white-space: normal; }
+table.wh td.wh-title .wh-sess-title { color: var(--c-text-bright); font-size: 12.5px; white-space: normal; }
+
+/* ─── v4.2: nav head — brand + collapse toggle share a row ─────────────────── */
+/* The toggle sits here rather than inside #brand because #brand is itself a
+   <button> (nested buttons are invalid, and the inner click would also fire the
+   brand's back-to-launcher handler). Keeping it in the head means it stays
+   reachable when collapsed — a control visible only while expanded is a
+   one-way door. */
+.nav-head { display: flex; align-items: flex-start; gap: 4px; }
+.nav-head #brand { flex: 1 1 auto; min-width: 0; }
+#nav-toggle {
+  flex: 0 0 auto; background: rgba(var(--rgb-surface), 0.6); color: rgba(var(--rgb-nav-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 5px;
+  cursor: pointer; font-family: inherit; font-size: 12px; line-height: 1;
+  padding: 5px 7px; margin-top: 4px;
+  transition: background .15s, color .15s;
+}
+#nav-toggle:hover { background: rgba(var(--rgb-accent), 0.55); color: var(--c-on-accent); }
+
+/* Collapsed icon rail — labels and the project sub-list drop out, icons stay. */
+#app.nav-collapsed #side-nav { width: 46px; flex: 0 0 46px; padding: 10px 5px; }
+#app.nav-collapsed .nav-head { flex-direction: column; align-items: center; gap: 2px; }
+#app.nav-collapsed #brand { justify-content: center; padding: 4px 0 8px; }
+#app.nav-collapsed .brand-text,
+#app.nav-collapsed .nav-label,
+#app.nav-collapsed .wh-arrow { display: none; }
+#app.nav-collapsed .wh-nav-list { display: none; }
+#app.nav-collapsed .nav-item { text-align: center; padding: 7px 2px; }
+#app.nav-collapsed #nav-toggle { margin-top: 0; padding: 5px 6px; }
+
+/* ─── v4.2: row compaction — one text line per row ─────────────────────────── */
+/* D/T/S/Project now read left-to-right on one line (see mkDateCell), so the
+   metadata that used to cost three lines of row height costs none. Every other
+   roll-up cell is clamped to one line with an ellipsis; the full text lives in
+   each cell's title attribute. */
+.wh-dst-line { display: flex; align-items: baseline; gap: 6px; }
+.wh-dst-sep { color: rgba(var(--rgb-sep), 0.55); }
+.wh-dst-p { margin-top: 0; }
+/* v4.15: row height is a budget. Padding 3px → 1px and line-height tightened
+   to 1.25 takes a row from ~24px to ~18px, fitting about a third more records
+   per screen. Font size is deliberately unchanged — legibility is not the thing
+   being spent here, whitespace is. This rule is later in the file than the
+   6px/12px default at the top, so it is the one that actually applies. */
+table.wh th, table.wh td { padding: 1px 10px; line-height: 1.25; }
+table.wh td.wh-title .wh-sess-title,
+table.wh td.wh-req,
+table.wh td.wh-prod { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+table.wh td.wh-title { max-width: 320px; }
+
+/* ─── v4.2: Outstanding work view ─────────────────────────────────────────── */
+#view-outstanding:not(.hidden) { display: flex; flex-direction: column; }
+#out-content { flex: 1 1 auto; overflow: auto; min-height: 0; }
+#out-filter {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  padding: 8px 16px; background: rgba(var(--rgb-chrome), 0.96);
+  border-bottom: 1px solid rgba(var(--rgb-accent), 0.25); font-size: 12px;
+}
+#out-filter button.out-f {
+  background: rgba(var(--rgb-surface), 0.9); color: rgba(var(--rgb-btn-text), 0.7);
+  border: 1px solid rgba(var(--rgb-accent), 0.25); border-radius: 4px;
+  padding: 3px 10px; cursor: pointer; font: inherit;
+  transition: background .15s, color .15s;
+}
+#out-filter button.out-f.active { background: rgba(var(--rgb-accent), 0.78); color: var(--c-on-accent); border-color: rgba(var(--rgb-accent-bright), 0.7); }
+#out-filter button.out-f:hover:not(.active) { background: rgba(var(--rgb-surface-hover), 0.9); color: var(--c-text-strong); }
+
+.out-card {
+  border: 1px solid rgba(var(--rgb-accent), 0.28); border-radius: 8px;
+  background: rgba(var(--rgb-card), 0.5); margin-bottom: 12px; overflow: hidden;
+}
+.out-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 14px; background: rgba(var(--rgb-card-head), 0.6);
+  border-bottom: 1px solid rgba(var(--rgb-accent), 0.22);
+}
+.out-proj { color: var(--c-project); font-weight: 600; font-size: 13px; flex: 0 0 auto; }
+.out-tally { color: rgba(var(--rgb-muted), 0.7); font-size: 11px; flex: 1 1 auto; }
+.out-open {
+  flex: 0 0 auto; background: rgba(var(--rgb-green), 0.16); color: var(--c-green-soft);
+  border: 1px solid rgba(var(--rgb-green), 0.45); border-radius: 4px;
+  padding: 4px 12px; cursor: pointer; font: inherit; font-size: 11.5px;
+  transition: background .15s, color .15s;
+}
+.out-open:hover:not(:disabled) { background: rgba(var(--rgb-green), 0.30); color: var(--c-on-accent); }
+.out-open:disabled { opacity: .75; cursor: default; }
+
+.out-item {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 6px 14px; font-size: 12px;
+  border-top: 1px solid rgba(var(--rgb-accent), 0.10);
+}
+/* Tag colour carries the meaning: amber = a person is blocking it,
+   blue = it is only waiting to be built. */
+.out-tag {
+  flex: 0 0 84px; font-size: 9.5px; font-weight: 700; letter-spacing: .06em;
+  text-align: center; padding: 2px 0; border-radius: 3px; cursor: help;
+}
+.out-tag.you { background: rgba(var(--rgb-amber), 0.18); color: var(--c-amber); border: 1px solid rgba(var(--rgb-amber), 0.40); }
+.out-tag.cc  { background: rgba(var(--rgb-accent-bright), 0.18);  color: var(--c-project); border: 1px solid rgba(var(--rgb-accent-bright), 0.40); }
+.out-text { flex: 1 1 auto; color: var(--c-text-strong); white-space: normal; }
+.out-src  { flex: 0 0 auto; color: rgba(var(--rgb-meta-dim), 0.65); font-size: 10.5px; white-space: nowrap; }
+
+/* ─── Light mode: interaction states the token swap can't fix ───────────────
+   White-on-translucent works over a dark page and fails over a light one. Hover
+   text on a transparent background becomes brand-coloured; active/hover pills
+   get a solid fill so their white label keeps its contrast. */
+html[data-theme="light"] #brand:hover .brand-text,
+html[data-theme="light"] #crumbs .crumb:hover { color: var(--c-brand); }
+
+html[data-theme="light"] .nav-item.active,
+html[data-theme="light"] .wh-nav-item.active,
+html[data-theme="light"] .wh-nav-item.wh-nav-all:hover,
+html[data-theme="light"] .wh-nav-item.wh-nav-all.active,
+html[data-theme="light"] #nav-toggle:hover,
+html[data-theme="light"] .nav-tool:hover,
+html[data-theme="light"] .prio-arrow:hover:not(:disabled) {
+  background: rgb(var(--rgb-accent)); color: var(--c-on-accent);
+}
+html[data-theme="light"] .out-open:hover:not(:disabled) {
+  background: rgb(var(--rgb-green)); color: var(--c-on-accent);
+}
+
+/* ─── Theme toggle ─────────────────────────────────────────────────────────
+   Sits at the foot of the nav list rather than in the nav head: the head is only
+   184px wide and already carries the brand plus the version badge app.js writes
+   into it, and a third control there overlapped that text. As a list item it
+   also gets a readable label instead of a bare glyph. */
+.nav-tool {
+  background: rgba(var(--rgb-surface), 0.6); color: rgba(var(--rgb-nav-text), 0.6);
+  border: 1px solid transparent; margin-top: 6px;
+  padding: 7px 10px; border-radius: 5px;
+  cursor: pointer; font-size: 12.5px; font-family: inherit;
+  text-align: left; transition: background .15s, color .15s;
+}
+.nav-tool:hover { background: rgba(var(--rgb-surface-hover), 0.8); color: rgba(var(--rgb-text-hi), 0.85); }
+#app.nav-collapsed .nav-tool { text-align: center; padding: 7px 2px; }
+
+/* The "how many days" box beside the Last N days button. Hidden by a class, not
+   an inline style — the page's Content-Security-Policy blocks inline styles, so
+   a style attribute silently does nothing here. Narrow on purpose: four digits. */
+.wh-days-input {
+  width: 58px; background: rgba(var(--rgb-surface), 0.9); color: var(--c-text-strong);
+  border: 1px solid rgba(var(--rgb-accent), 0.45); border-radius: 4px;
+  padding: 2px 6px; font: inherit; text-align: right;
+  color-scheme: var(--color-scheme);
+}
+.wh-days-input.wh-days-hidden { display: none; }
+
+/* Sessions you never named show "—" in the Sessions view's first column. Dimmed
+   so an absent title reads as absent rather than competing with real titles. */
+.wh-untitled { color: rgba(var(--rgb-muted), 0.55); }
+
+/* ═══ Print ════════════════════════════════════════════════════════════════
+   Two separate problems are fixed here. (1) Colour: paper is white, so the light
+   tokens are forced on regardless of which theme is showing. (2) Layout: the app
+   is a fixed 100vh shell with overflow:hidden, which caps any print at a single
+   screenful — the height is unlocked so content flows across as many sheets as
+   it needs, and the on-screen one-line ellipsis clamps are released because
+   paper has no hover to reveal the truncated text.
+   ────────────────────────────────────────────────────────────────────────── */
+@page { margin: 12mm; }
+
+@media print {
+  :root {
+  --rgb-accent: 59,91,219;
+  --rgb-accent-bright: 59,91,219;
+  --rgb-accent-hover: 44,84,214;
+  --rgb-link: 21,80,200;
+  --rgb-surface: 226,232,244;
+  --rgb-surface-hover: 205,215,238;
+  --rgb-row-hover: 200,212,240;
+  --rgb-chrome: 240,244,250;
+  --rgb-tooltip: 255,255,255;
+  --rgb-card: 245,247,252;
+  --rgb-card-head: 232,237,247;
+  --rgb-group-row: 224,231,246;
+  --rgb-assistant: 226,244,235;
+  --rgb-outstanding: 253,242,224;
+  --rgb-muted: 84,98,136;
+  --rgb-muted-blue: 82,97,140;
+  --rgb-label: 55,72,128;
+  --rgb-btn-text: 52,68,116;
+  --rgb-nav-text: 60,76,124;
+  --rgb-text-hi: 34,46,84;
+  --rgb-text-mid: 40,52,88;
+  --rgb-meta: 88,102,142;
+  --rgb-meta-dim: 92,104,140;
+  --rgb-sep: 120,130,160;
+  --rgb-date: 62,78,120;
+  --rgb-num: 40,52,92;
+  --rgb-empty: 88,98,128;
+  --rgb-body-text: 28,36,64;
+  --rgb-green: 16,130,74;
+  --rgb-green-text: 20,110,66;
+  --rgb-amber: 150,90,8;
+
+  --c-bg: #f6f8fc;
+  --c-bg-frame: #eef2f8;
+  --c-on-accent: #fff;
+  --c-text: #1c2438;
+  --c-text-strong: #202a44;
+  --c-text-bright: #16203a;
+  --c-text-max: #0d1526;
+  --c-text-nav-all: #1e2a48;
+  --c-link: #1550c8;
+  --c-project: #24409c;
+  --c-group: #253f9a;
+  --c-brand: #2b46b4;
+  --c-drop: #2b57d4;
+  --c-green: #0f7a45;
+  --c-green-soft: #0b6438;
+  --c-green-mid: #12744a;
+  --c-amber: #96600a;
+  --c-warn: #8a5d04;
+  --c-error: #b91c1c;
+  --color-scheme: light;
+  }
+
+  html, body { height: auto; overflow: visible; background: #fff; }
+  #app { display: block; width: auto; height: auto; }
+  #main { position: static; height: auto; overflow: visible; }
+  .view { position: static; inset: auto; }
+  .view.hidden { display: none !important; }
+  #work-content, #out-content, #prio-content { height: auto; overflow: visible; }
+
+  /* Screen-only chrome: navigation, filter bars and the live-only views. */
+  #side-nav, #wh-filter, #out-filter, #prio-bar,
+  #c, #v1-frame, #v18-frame, .v1-fallback { display: none !important; }
+
+  /* Released clamps — the full cell text prints instead of an ellipsis. */
+  table.wh td.wh-title .wh-sess-title,
+  table.wh td.wh-req,
+  table.wh td.wh-prod,
+  table.wh td.wh-title {
+    white-space: normal; overflow: visible; text-overflow: clip; max-width: none;
+  }
+
+  /* Sticky offsets are meaningless on paper; let the browser repeat <thead>
+     at the top of each sheet instead, and keep rows from splitting mid-row. */
+  table.wh th, table.wh tbody tr.wh-group td { position: static; }
+  thead { display: table-header-group; }
+  table.wh { page-break-inside: auto; }
+  table.wh tr { page-break-inside: avoid; break-inside: avoid; }
+  .out-card, .wh-rollup-card, .wh-fi, .wh-xc { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Rows are separated by hairlines rather than fills, since browsers drop
+     background colours when printing. */
+  table.wh th, table.wh td { border-bottom: 1px solid #ccd; }
+}

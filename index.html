@@ -9,20 +9,39 @@
                  style-src 'self';
                  frame-src 'self' http://localhost:3000">
   <link rel="stylesheet" href="styles.css">
+  <!-- Same-origin, so it satisfies the CSP default-src 'self' above (there is no
+       img-src directive, so images fall back to default-src). Served by server.js,
+       whose MIME table already maps .svg -> image/svg+xml. -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>PAI Launcher</title>
+  <!-- Loaded here, not at the end of <body>, so data-theme is set before the
+       first paint. Deferring it makes the page flash the wrong theme. -->
+  <script src="theme.js"></script>
 </head>
 <body>
   <div id="app">
     <nav id="side-nav">
-      <button id="brand" type="button" title="Back to launcher home">
-        <span class="brand-mark">⬢</span><span class="brand-text">PAI Portfolio</span>
-      </button>
+      <div class="nav-head">
+        <button id="brand" type="button" title="Back to launcher home">
+          <!-- Briefcase, matching favicon.svg. Drawn with fill="currentColor" and no
+               blue plate: #brand .brand-mark already sets color: var(--c-brand), so the
+               mark restains itself on the dark/light theme switch exactly as the old ⬢
+               character did. A filled plate here would read as a block against the nav. -->
+          <span class="brand-mark"><svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12.5 9.5A2.5 2.5 0 0 1 15 7h2a2.5 2.5 0 0 1 2.5 2.5V11h-2.2V9.4h-2.6V11H12.5V9.5Z" fill="currentColor"/><path d="M5.6 12.2h20.8a1.6 1.6 0 0 1 1.6 1.6v3.4H18.6v1.3a.7.7 0 0 1-.7.7h-3.8a.7.7 0 0 1-.7-.7v-1.3H4V13.8a1.6 1.6 0 0 1 1.6-1.6Z" fill="currentColor"/><path d="M4 19.2h9.4v.3a1.6 1.6 0 0 0 1.6 1.6h2a1.6 1.6 0 0 0 1.6-1.6v-.3H28v5.2a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 24.4v-5.2Z" fill="currentColor"/></svg></span><span class="brand-text">PAI Portfolio</span>
+        </button>
+        <button id="nav-toggle" type="button" title="Collapse navigation" aria-label="Collapse navigation">«</button>
+      </div>
       <div class="nav-links">
-        <button class="nav-item active" id="nav-work" data-target="work"><span class="wh-arrow">▸</span> <span class="wh-folder" id="wh-folder">🗀</span> Work History</button>
-        <button class="nav-item" data-target="v17">◎ Orbital</button>
-        <button class="nav-item" data-target="v18">○ Circular</button>
-        <button class="nav-item" data-target="v1">▦ V1 Table</button>
+        <button class="nav-item active" id="nav-work" data-target="work"><span class="wh-arrow">▸</span> <span class="wh-folder" id="wh-folder">🗀</span> <span class="nav-label">Work History</span></button>
+        <button class="nav-item" data-target="v17"><span class="nav-icon">◎</span> <span class="nav-label">Orbital</span></button>
+        <button class="nav-item" data-target="v18"><span class="nav-icon">○</span> <span class="nav-label">Circular</span></button>
+        <button class="nav-item" data-target="outstanding"><span class="nav-icon">⚠</span> <span class="nav-label">Outstanding</span></button>
+        <button class="nav-item" data-target="v1"><span class="nav-icon">▦</span> <span class="nav-label">V1 Table</span></button>
+        <button class="nav-item" data-target="priority" title="Set the running order of your projects, highest priority first"><span class="nav-icon">⚙</span> <span class="nav-label">Prioritise</span></button>
         <div id="wh-nav-list" class="wh-nav-list hidden"></div>
+        <!-- Deliberately NOT class="nav-item": app.js wires every .nav-item to
+             showView(dataset.target), and this switches theme, not view. -->
+        <button class="nav-tool" id="theme-toggle" type="button" title="Switch to light mode" aria-label="Switch to light mode"><span class="nav-icon">☀</span> <span class="nav-label">Light mode</span></button>
       </div>
     </nav>
     <main id="main">
@@ -43,6 +62,29 @@
       <section id="view-work" class="view">
         <div id="crumbs"></div>
         <div id="work-content"></div>
+      </section>
+      <section id="view-priority" class="view hidden">
+        <div id="prio-bar">
+          <span class="wh-f-label">Prioritise Projects</span>
+          <span class="wh-f-sep">·</span>
+          <span class="prio-hint">Highest priority at the top. Drag a row, use ▲ ▼, or type a number.</span>
+          <span class="wh-f-spacer"></span>
+          <button id="prio-save" class="prio-btn prio-save" title="Write this running order to the database">Save order</button>
+          <button id="prio-reset" class="prio-btn" title="Discard unsaved changes and reload the last saved order">Reset</button>
+          <span id="prio-status" class="wh-f-summary"></span>
+        </div>
+        <div id="prio-content"></div>
+      </section>
+      <section id="view-outstanding" class="view hidden">
+        <div id="out-filter">
+          <span class="wh-f-label">Owner:</span>
+          <button class="out-f active" data-owner="all">All</button>
+          <button class="out-f" data-owner="human">Yours</button>
+          <button class="out-f" data-owner="claude">Claude Code</button>
+          <span class="wh-f-spacer"></span>
+          <span id="out-summary" class="wh-f-summary"></span>
+        </div>
+        <div id="out-content"></div>
       </section>
     </main>
   </div>

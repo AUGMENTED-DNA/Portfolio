@@ -79,6 +79,34 @@
       color: rgba(138,180,248,0.40); letter-spacing: 0.06em;
     }
     #about-overlay .help-row { width: 64%; margin-bottom: 8px; }
+
+    /* ─── Light mode ────────────────────────────────────────────────────────
+       This page is shown inside a frame on the portfolio, which posts its theme
+       across on load and whenever the toggle is clicked (see the script at the
+       bottom). Opened on its own it stays dark, which is the default. */
+    html[data-theme="light"] #orbital-window {
+      background: #f6f8fc;
+      box-shadow: 0 0 0 1px rgba(59,91,219,0.22),
+        0 0 48px rgba(59,91,219,0.14), 0 0 110px rgba(59,91,219,0.07),
+        inset 0 0 60px rgba(40,60,120,0.10);
+    }
+    html[data-theme="light"] .win-btn {
+      border-color: rgba(21,80,200,0.45);
+      background: rgba(255,255,255,0.90); color: rgba(21,80,200,0.90);
+    }
+    html[data-theme="light"] .win-sep { background: rgba(21,80,200,0.28); }
+    html[data-theme="light"] #tooltip {
+      background: rgba(255,255,255,0.95); color: #1550c8;
+      border-color: rgba(21,80,200,0.35);
+    }
+    html[data-theme="light"] #help-overlay,
+    html[data-theme="light"] #about-overlay { background: rgba(246,248,252,0.90); }
+    html[data-theme="light"] #help-overlay h2,
+    html[data-theme="light"] #about-overlay h2 { color: #1550c8; }
+    html[data-theme="light"] .help-icon { color: #2b46b4; }
+    html[data-theme="light"] .help-text { color: rgba(34,46,84,0.88); }
+    html[data-theme="light"] .help-text strong { color: #1550c8; }
+    html[data-theme="light"] .help-dismiss { color: rgba(21,80,200,0.55); }
   </style>
 </head>
 <body>
@@ -150,6 +178,20 @@
     </div>
   </div>
   <div id="tooltip"></div>
+  <script>
+    // This page runs inside a frame on the portfolio. The parent posts its theme
+    // here on load and on every toggle; the origin check keeps any other page
+    // from restyling this one. The themechange event is re-dispatched locally
+    // because app.js draws the ring on a canvas and repaints from PAL, which
+    // only updates when it hears that event.
+    window.addEventListener('message', (e) => {
+      if (e.origin !== window.location.origin) return;
+      if (!e.data || e.data.type !== 'theme') return;
+      const theme = e.data.theme === 'light' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      document.dispatchEvent(new CustomEvent('themechange', { detail: { theme } }));
+    });
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

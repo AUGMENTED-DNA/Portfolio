@@ -2,8 +2,10 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
-const { execFileSync } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const idx  = require('./indexer');
+const { queryOutstanding } = require('./outstanding');
+const { withCompletion }   = require('./completion');
 
 const PORT = 4040;
 const MIME = {
@@ -38,6 +40,7 @@ const NAME_TO_PATH = {
   'PAI GUI':           '/home/dmcneill/Projects/PAI_GUI',
   'MissionControl':    '/home/dmcneill/Projects/MissionControl',
   'TheVault':          '/home/dmcneill/Projects/TheVault',
+  'SessionRelauncher': '/home/dmcneill/Projects/SessionRelauncher',
 };
 
 // ─── Session-records work history ──────────────────────────────────────────────
@@ -277,21 +280,150 @@ function allProjects(range) {
   });
 }
 
+// ── v4.2: response cache for the work-history API ────────────────────────────
+// MEASURED: a bare /api/work-history took 11.9s. It is not gitTag (389ms for all
+// 29 repos) — it is indexer.js refreshProjects(), which calls ensureIndex(TRUE)
+// and so forces a full re-index of every session record on EVERY request,
+// deliberately bypassing the _built guard. That file's comment says the walk is
+// "cheap once warm"; it is not. Caching here keeps repeat navigation instant
+// without editing indexer.js.
+const _apiCache = new Map();                 // key → { at, body }
+const API_TTL_MS = 60_000;
+function cachedJSON(key, produce) {
+  const hit = _apiCache.get(key);
+  if (hit && Date.now() - hit.at < API_TTL_MS) return hit.body;
+  const body = JSON.stringify(produce());
+  _apiCache.set(key, { at: Date.now(), body });
+  return body;
+}
+
+// The live project list — registry + session dirs, via the indexer — with each
+// project's completion percentage attached. Deliberately NOT named projectList:
+// that name is taken by a legacy orbital-era function above that reads the
+// hardcoded NAME_TO_PATH map in this file, and routing here by accident is
+// exactly how a "live" list silently goes stale.
+function projectListWithCompletion(range) {
+  const r = idx.queryProjects(range);
+  return { ...r, projects: withCompletion(r.projects) };
+}
+
+// ── v4.2: open a project folder in a new Claude Code session ─────────────────
+// Launches a NEW Windows Terminal; `claude` is never run inline, because the
+// CLAUDECODE env var blocks nested sessions.
+// SECURITY: the project name is looked up in the indexer's own NAME_TO_PATH map
+// and anything not already in that map is refused — the request never supplies
+// a path, so a crafted body cannot make this run somewhere else. The server is
+// also bound to 127.0.0.1 (see listen below), so this is unreachable off-box.
+// GOTCHA (cost a false success): `wsl.exe -- claude` does NOT work. Launching
+// through wsl.exe yields a PATH without ~/.local/bin — even via `bash -lc` —
+// so `claude` is not found, the tab dies instantly, and spawn() still reports
+// success because it only throws on a synchronous failure. Resolve the binary
+// to an absolute path once at startup and hand wsl.exe that.
+let _claudeBin = '';
+try { _claudeBin = execFileSync('bash', ['-lc', 'command -v claude'], { encoding: 'utf8' }).trim(); }
+catch { /* resolved lazily below; reported honestly if still missing */ }
+
+function openInClaude(name) {
+  const dir = (idx.NAME_TO_PATH || {})[name];
+  if (!dir) return { ok: false, error: 'Unknown project: ' + name };
+  if (!fs.existsSync(dir)) return { ok: false, error: 'Folder no longer exists: ' + dir };
+  if (!_claudeBin || !fs.existsSync(_claudeBin)) {
+    return { ok: false, error: 'Could not find the claude binary on this machine' };
+  }
+  try {
+    const child = spawn('wt.exe',
+      ['-w', '0', 'nt', '--title', 'Claude — ' + name, 'wsl.exe', '--cd', dir, '--', _claudeBin],
+      { detached: true, stdio: 'ignore' });
+    // spawn() reports launch failures asynchronously; without this the button
+    // would say "Opened" for a terminal that never appeared.
+    child.on('error', (e) => console.error('[open-in-claude] launch failed:', e.message));
+    child.unref();
+    return { ok: true, project: name, dir };
+  } catch (e) {
+    return { ok: false, error: 'Could not launch Windows Terminal: ' + e.message };
+  }
+}
+
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://localhost');
 
+  // JSON API: outstanding work items, grouped by project, tagged by owner.
+  if (u.pathname === '/api/outstanding') {
+    const owner = u.searchParams.get('owner') || 'all';
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(queryOutstanding(owner)));
+    return;
+  }
+
+  // Launch a Claude Code session in a project folder. POST only — this starts a
+  // process, so it must not be reachable by a plain link or an <img> tag.
+  if (u.pathname === '/api/open-in-claude') {
+    if (req.method !== 'POST') {
+      res.writeHead(405, { 'Content-Type': 'application/json', 'Allow': 'POST' });
+      res.end(JSON.stringify({ ok: false, error: 'POST required' }));
+      return;
+    }
+    let body = '';
+    req.on('data', (c) => { body += c; if (body.length > 2048) req.destroy(); });
+    req.on('end', () => {
+      let name = '';
+      try { name = String(JSON.parse(body || '{}').project || ''); } catch { /* bad JSON → unknown project */ }
+      const out = openInClaude(name);
+      res.writeHead(out.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(out));
+    });
+    return;
+  }
+
+  // JSON API: hand-entered project ranking (1 = highest). GET returns the saved
+  // order; POST replaces it wholesale with an ordered array of project names.
+  if (u.pathname === '/api/priorities') {
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', (c) => {
+        body += c;
+        if (body.length > 1e6) { req.destroy(); }        // ranking payloads are tiny
+      });
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body || '{}');
+          const order  = Array.isArray(parsed) ? parsed : parsed.order;
+          const saved  = idx.setPriorities(order || []);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, priorities: saved }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: String(e && e.message || e) }));
+        }
+      });
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ priorities: idx.getPriorities() }));
+    return;
+  }
+
   // JSON API: session-records work history. Early-return before static files.
+  //
+  // The bare project list is the one response the V1 table also consumes, so
+  // it is the single place completion percentages are attached — computing
+  // them in two apps is how the two lists drifted apart in the first place.
   if (u.pathname === '/api/work-history') {
+
     const name   = decodeURIComponent(u.searchParams.get('project') || '');
     const effort = u.searchParams.get('effort') || '';
-    const range  = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '' };
+    // v4.12: `limit` lets the page ask for more than the default cap once it has
+    // told you a cap was applied. Clamped inside queryRollup, not here.
+    const range  = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '',
+                     limit: u.searchParams.get('limit') || '' };
     const scope  = u.searchParams.get('scope') || '';
-    const payload = effort          ? idx.queryEffort(effort)            // Phase-2 drill-down
+    const body = cachedJSON(u.pathname + '?' + u.searchParams.toString(), () =>
+                    effort          ? idx.queryEffort(effort)            // Phase-2 drill-down
                   : scope === 'all' ? idx.queryRollup(range)             // all projects
                   : name            ? idx.queryProject(name, range)      // one project
-                  :                   idx.queryProjects(range);          // project list
+                  :                   projectListWithCompletion(range));  // project list
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(payload));
+    res.end(body);
     return;
   }
 
@@ -307,4 +439,8 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'text/plain' });
     res.end(data);
   });
-}).listen(PORT, () => console.log(`PAI Launcher → http://localhost:${PORT}`));
+// v4.2 SECURITY: bind loopback only. This previously called .listen(PORT) with
+// no host, which binds 0.0.0.0 — every interface on the network. That was
+// already too open for a page that exposes your whole session history, and it
+// is unacceptable now that /api/open-in-claude can start a process.
+}).listen(PORT, '127.0.0.1', () => console.log(`PAI Launcher → http://127.0.0.1:${PORT}`));

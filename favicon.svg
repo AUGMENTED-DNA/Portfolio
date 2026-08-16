@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="PAI Portfolio">
+  <title>PAI Portfolio</title>
+  <rect width="32" height="32" rx="7" fill="#3b5bdb"/>
+  <path d="M12.5 9.5A2.5 2.5 0 0 1 15 7h2a2.5 2.5 0 0 1 2.5 2.5V11h-2.2V9.4h-2.6V11H12.5V9.5Z" fill="#fff"/>
+  <path d="M5.6 12.2h20.8a1.6 1.6 0 0 1 1.6 1.6v3.4H18.6v1.3a.7.7 0 0 1-.7.7h-3.8a.7.7 0 0 1-.7-.7v-1.3H4V13.8a1.6 1.6 0 0 1 1.6-1.6Z" fill="#fff"/>
+  <path d="M4 19.2h9.4v.3a1.6 1.6 0 0 0 1.6 1.6h2a1.6 1.6 0 0 0 1.6-1.6v-.3H28v5.2a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 24.4v-5.2Z" fill="#fff"/>
+</svg>

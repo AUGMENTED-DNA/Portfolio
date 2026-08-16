@@ -4,6 +4,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { mergedProjects, findProject } = require('./live-projects');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,21 +36,25 @@ if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
 }
 
-// Get all projects
-app.get('/api/projects', (req, res) => {
+// Get all projects — the live registry set, not this app's own data.json copy.
+// data.json froze on 24 Apr and showed 16 projects while the registry had 27;
+// membership now comes from :4040 and data.json only supplies hand-written extras.
+app.get('/api/projects', async (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    res.json(data.projects);
+    const { projects, degraded, source } = await mergedProjects();
+    res.set('X-Project-Source', source);          // visible in devtools when debugging a count
+    if (degraded) res.set('X-Project-Degraded', '1');
+    res.json(projects);
   } catch (err) {
     res.status(500).json({ error: 'Failed to read projects' });
   }
 });
 
-// Get single project
-app.get('/api/projects/:id', (req, res) => {
+// Get single project — same merged set, so a project that exists only in the
+// live registry still opens instead of 404ing.
+app.get('/api/projects/:id', async (req, res) => {
   try {
-    const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    const project = data.projects.find(p => p.id === req.params.id);
+    const project = await findProject(req.params.id);
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
@@ -60,9 +65,17 @@ app.get('/api/projects/:id', (req, res) => {
 });
 
 // Add backlog item
-app.post('/api/projects/:id/backlog', (req, res) => {
+app.post('/api/projects/:id/backlog', async (req, res) => {
   try {
     const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    // A project can now appear in the list without ever having been written to
+    // data.json. Adding its first backlog item is what creates its row here —
+    // otherwise every new project's first edit fails with "Project not found".
+    if (!data.projects.find(p => p.id === req.params.id)) {
+      const live = await findProject(req.params.id);
+      if (live) data.projects.push({ id: live.id, name: live.name,
+        description: live.description || '', changelog: [], backlog: [] });
+    }
     const project = data.projects.find(p => p.id === req.params.id);
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
