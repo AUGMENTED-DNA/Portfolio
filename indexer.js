@@ -470,15 +470,32 @@ function extractEvaluation(file) {
   // literal from a debug script. A real ledger always writes the heading with a
   // colon; a code or prose reference to the heading does not.
   const hits = [...blob.matchAll(/\\n⏳ INCOMPLETE IN THIS SESSION:/g)].map((m) => m.index);
-  if (hits.length) {
-    const tail = blob.slice(hits[hits.length - 1], hits[hits.length - 1] + 1200);
+
+  // v4.18 (measured 2026-08-30): CLAUDE.md carries the ledger TEMPLATE, and
+  // CLAUDE.md is loaded into every session's context at startup — so its
+  // placeholder lines ("- [item] — waiting on [you | PAI]") appear verbatim in
+  // transcripts that never wrote a ledger at all. 38 sessions were being
+  // reported as "a ledger was written but its items could not be read" when the
+  // truth was that none was written. That is the same class of error as the
+  // seven earlier attempts: matching something that DESCRIBES the thing rather
+  // than something that IS it — and worse than a blank, because it states a
+  // finding. Walk back to the last ledger that is not the template; if every
+  // one is, fall through to the no-verdict path below.
+  const isTemplate = (t) => /\[item\]|\[you \| PAI\]/.test(t.split('\\n').slice(0, 3).join(' '));
+  let ledgerTail = null;
+  for (let i = hits.length - 1; i >= 0; i--) {
+    const t = blob.slice(hits[i], hits[i] + 1200);
+    if (isTemplate(t)) continue;
+    ledgerTail = t; break;
+  }
+  if (ledgerTail) {
 
     // ITEMS DECIDE FIRST. Testing the "nothing outstanding" wording first scored
     // this session Complete while its closing ledger listed three open items —
     // the phrase appeared later in the 1200-char window (in an approval dialog
     // quoting the rule) and won over the ledger's own contents. A ledger that
     // lists work is incomplete no matter what text follows it.
-    const items = [...tail.matchAll(/[-•]\s*([^\\\n"]{6,160}?)\s*—\s*waiting on\s+(you|PAI)/gi)]
+    const items = [...ledgerTail.matchAll(/[-•]\s*([^\\\n"]{6,160}?)\s*—\s*waiting on\s+(you|PAI)/gi)]
       .map((m) => m[1].trim() + ' (waiting on ' + m[2] + ')');
     if (items.length) {
       // `src` marks where the verdict came from. indexSession used to sniff the
@@ -497,7 +514,7 @@ function extractEvaluation(file) {
     // Find the heading's own line by its CONTENT, not by position: the tail
     // begins AT the escaped newline, so element [0] is the empty string before
     // it and every cleanly-finished session scored Unknown.
-    const headLine = tail.split('\\n').find((s) => s.includes('INCOMPLETE IN THIS SESSION')) || '';
+    const headLine = ledgerTail.split('\\n').find((s) => s.includes('INCOMPLETE IN THIS SESSION')) || '';
     if (/nothing outstanding/i.test(headLine)) {
       return { text: 'Complete — the closing ledger recorded nothing outstanding', ok: 1, src: 'ledger' };
     }
