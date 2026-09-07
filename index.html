@@ -61,6 +61,15 @@
       </section>
       <section id="view-work" class="view">
         <div id="crumbs"></div>
+        <!-- Data-freshness bar (2026-08-31). The project list is served from a
+             file that cron rebuilds every 4 hours, so the page must SAY how old
+             the numbers are — a fast page showing silently stale data is worse
+             than a slow honest one. Refresh forces a live rebuild. -->
+        <div id="wh-fresh" class="wh-fresh">
+          <span id="wh-fresh-text" class="wh-fresh-text">&nbsp;</span>
+          <button id="wh-refresh" class="prio-btn" type="button"
+                  title="Rebuild the project data now instead of using the scheduled copy">Refresh</button>
+        </div>
         <div id="work-content"></div>
       </section>
       <section id="view-priority" class="view hidden">

@@ -417,7 +417,42 @@ http.createServer((req, res) => {
     const range  = { from: u.searchParams.get('from') || '', to: u.searchParams.get('to') || '',
                      limit: u.searchParams.get('limit') || '' };
     const scope  = u.searchParams.get('scope') || '';
-    const body = cachedJSON(u.pathname + '?' + u.searchParams.toString(), () =>
+    // v4.3: the plain project list (no filters) is served from the file written
+    // by precompute.js, which cron refreshes every four hours. This is the ONLY
+    // shape that is precomputable — anything carrying a date range, a project
+    // name or an effort id is specific to the request and still computed live.
+    // `?live=1` forces a rebuild AND rewrites the cache, which is what the page's
+    // Refresh button sends. Falls through to live computation whenever the file
+    // is missing or unreadable, so a deleted cache degrades to "slow", never to
+    // "broken".
+    const plainList = !effort && !name && scope !== 'all'
+                      && !range.from && !range.to && !range.limit;
+    const forceLive = u.searchParams.get('live') === '1';
+    let body = null;
+    if (plainList && forceLive) {
+      try {
+        require('./precompute.js').run();
+        _apiCache.clear();                       // the 60s memory cache is now stale
+      } catch (e) { console.error('[work-history] live refresh failed:', e && e.message); }
+    }
+    if (plainList) {
+      try {
+        const raw = fs.readFileSync(require('./precompute.js').CACHE_FILE, 'utf8');
+        const c   = JSON.parse(raw);
+        if (c && Array.isArray(c.projects)) {
+          // Projects in the cache are ALREADY completion-enriched by precompute.js;
+          // re-running withCompletion() here cost ~400ms per cold read.
+          // Also pass through any recorded rebuild FAILURE so the page can say
+          // the schedule is broken rather than just showing an ageing date.
+          let refreshError = null;
+          try {
+            refreshError = JSON.parse(fs.readFileSync(require('./precompute.js').ERROR_FILE, 'utf8'));
+          } catch { /* no marker == last run succeeded */ }
+          body = JSON.stringify({ ...c, cachedAt: c.builtAt, refreshError });
+        }
+      } catch { /* no cache yet, or unreadable — fall through to live */ }
+    }
+    if (body === null) body = cachedJSON(u.pathname + '?' + u.searchParams.toString(), () =>
                     effort          ? idx.queryEffort(effort)            // Phase-2 drill-down
                   : scope === 'all' ? idx.queryRollup(range)             // all projects
                   : name            ? idx.queryProject(name, range)      // one project

@@ -784,3 +784,14 @@ html[data-theme="light"] .out-open:hover:not(:disabled) {
      background colours when printing. */
   table.wh th, table.wh td { border-bottom: 1px solid #ccd; }
 }
+
+/* Provenance tag beside a last-active date (2026-08-31). Muted and small: it
+   qualifies the date without competing with it, and appears ONLY when the date
+   did not come from a recorded work session — i.e. it was inferred from the
+   project's last commit, or (weakest) from a source-file timestamp. */
+.la-src { font-size: 0.72em; opacity: 0.55; letter-spacing: .02em; }
+
+/* Data-freshness bar above the Work History table (2026-08-31). */
+.wh-fresh { display: flex; align-items: center; gap: .6rem; margin: .25rem 0 .5rem; }
+.wh-fresh-text { font-size: .78rem; opacity: .6; }
+.wh-fresh-text.stale { opacity: .95; color: #c98a2b; }

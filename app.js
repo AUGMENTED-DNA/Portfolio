@@ -530,7 +530,23 @@ function renderPriorityTable() {
     oc.title = inc + ' session' + (inc === 1 ? '' : 's') + ' with unfinished work in ' + p.name;
     tr.appendChild(oc);
 
-    const la = document.createElement('td'); la.className = 'date'; la.textContent = p.lastActive || '—';
+    // Show the date AND its provenance (2026-08-31). Dates no longer come from
+    // one place: a project with no indexed session falls back to its repo's last
+    // commit, then to file timestamps. Those are NOT equally trustworthy — file
+    // mtimes on this machine are contaminated by a bulk copy that stamped eight
+    // projects with the identical minute 2026-06-27 21:04 — so an unlabelled
+    // date would let weak evidence pass as real session work.
+    const la = document.createElement('td'); la.className = 'date';
+    la.textContent = p.lastActive || '—';
+    if (p.lastActive && p.lastActiveSource && p.lastActiveSource !== 'session') {
+      const tag = document.createElement('span');
+      tag.className = 'la-src';
+      tag.textContent = ' ' + p.lastActiveSource;
+      tag.title = p.lastActiveSource === 'repo'
+        ? 'No recorded work session. Date is this project\u2019s most recent commit.'
+        : 'No recorded work session and no commits. Date is the newest source file \u2014 weakest evidence.';
+      la.appendChild(tag);
+    }
     tr.appendChild(la);
 
     const mv = document.createElement('td'); mv.className = 'prio-move';
@@ -1238,6 +1254,60 @@ function mkCell(text, cls) {
   const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = text; return td;
 }
 
+// ── Data freshness (2026-08-31) ──────────────────────────────────────────────
+// The project list is served from a file rebuilt by cron every 4 hours, which is
+// why a cold load went from ~2.2s to ~70ms. The speed is only honest if the page
+// says how old the numbers are: a fast page quietly showing yesterday's data is
+// worse than a slow one. `cachedAt` is present ONLY on the precomputed shape —
+// any filtered or drill-down request is still computed live and shows "live".
+function showFreshness(data) {
+  const bar = document.getElementById('wh-fresh');
+  const txt = document.getElementById('wh-fresh-text');
+  if (!bar || !txt) return;
+  if (!data || !data.cachedAt) {
+    txt.textContent = 'Live data';
+    txt.classList.remove('stale');
+    return;
+  }
+  // A BROKEN schedule outranks a stale one: without this the page shows only an
+  // ageing timestamp, which is indistinguishable from "the next run is not due".
+  if (data.refreshError) {
+    const when = new Date(data.refreshError.failedAt);
+    txt.textContent = 'Scheduled refresh is FAILING since ' + when.toLocaleString()
+                    + ' \u2014 ' + (data.refreshError.message || 'unknown error')
+                    + '. Data below is the last good copy.';
+    txt.classList.add('stale');
+    return;
+  }
+  const then = new Date(data.cachedAt);
+  const mins = Math.max(0, Math.round((Date.now() - then.getTime()) / 60000));
+  const age  = mins < 1    ? 'just now'
+             : mins < 60   ? mins + ' minute' + (mins === 1 ? '' : 's') + ' ago'
+             : mins < 1440 ? Math.round(mins / 60) + ' hour' + (Math.round(mins / 60) === 1 ? '' : 's') + ' ago'
+             :               Math.round(mins / 1440) + ' day' + (Math.round(mins / 1440) === 1 ? '' : 's') + ' ago';
+  txt.textContent = 'Updated ' + age + ' \u2014 scheduled refresh every 4 hours';
+  // Past ~5 hours the scheduled rebuild has evidently not run; say so loudly
+  // rather than let the page keep presenting old numbers as current.
+  txt.classList.toggle('stale', mins > 300);
+}
+
+let _whRefreshing = false;
+document.addEventListener('click', async (ev) => {
+  const btn = ev.target && ev.target.closest && ev.target.closest('#wh-refresh');
+  if (!btn || _whRefreshing) return;
+  _whRefreshing = true;
+  const was = btn.textContent;
+  btn.textContent = 'Refreshing\u2026';
+  btn.disabled = true;
+  try {
+    // ?live=1 makes the server rebuild the index AND rewrite the cache file, so
+    // the refresh benefits every later page load, not just this one.
+    await fetch('/api/work-history?live=1', { cache: 'no-store' });
+    await showProjects();
+  } catch { /* showProjects reports its own failure */ }
+  finally { btn.textContent = was; btn.disabled = false; _whRefreshing = false; }
+});
+
 async function showProjects() {
   whCurrent = null;
   // v4.5: the left nav calls this directly, bypassing the View toggle. Resetting
@@ -1248,6 +1318,7 @@ async function showProjects() {
   let data;
   try { data = await fetchWork(whApi(), 'the project list'); }
   catch (e) { workMsg(e.message); return; }
+  showFreshness(data);
   const wrap = document.createElement('div'); wrap.className = 'wh-wrap';
   const h = document.createElement('div'); h.className = 'wh-h'; h.textContent = 'Work History by Project';
   const sub = document.createElement('div'); sub.className = 'wh-sub';
@@ -1301,7 +1372,9 @@ async function showProjects() {
     tr.append(mkCell(p.priority != null ? p.priority : '—', 'num'),
               mkCell(p.name), mkCell(p.version || '—', 'ver'),
               mkCell(p.sessions, 'num'), awaiting, open, confirmed,
-              mkCell(p.lastActive || '—', 'date'));
+              mkCell((p.lastActive || '—') +
+                (p.lastActive && p.lastActiveSource && p.lastActiveSource !== 'session'
+                  ? ' (' + p.lastActiveSource + ')' : ''), 'date'));
     tr.addEventListener('click', () => showSessions(p.name));
     tb.appendChild(tr);
   });

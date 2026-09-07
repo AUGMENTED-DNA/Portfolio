@@ -256,6 +256,92 @@ function gitTag(repo) {
   try { return execFileSync('git', ['-C', repo, 'describe', '--tags', '--abbrev=0'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
   catch { return ''; }
 }
+// ── Last-active fallback (2026-08-31) ────────────────────────────────────────
+// `lastActive` came from ONE source: MAX(date) over indexed work sessions. Any
+// project with no indexed session rendered "—" — 21 of 32, including Todoist
+// Agent, which is plainly not dormant. These fill that gap, weakest source last.
+//
+// ORDERING IS EVIDENCE-BASED, not arbitrary:
+//   * File mtimes are CONTAMINATED. Handyman, Hub-Bridge, PAI Visual and
+//     CCBridge all report 2026-06-27 at the IDENTICAL minute 21:04 — a bulk copy
+//     or restore (cf. ~/.claude.backup-2026-06-27T21-31-50), not work. Trusting
+//     mtimes would report that migration as "last active" on eight projects.
+//   * Running servers FAKE recency. YT's newest file is its own yt_processor.db;
+//     Meissler News' is scrape_log.txt. Both written today by software, not by
+//     Dane. Hence the exclusion list below.
+//   * A commit date cannot be reset by a file copy, so the repo outranks mtime.
+// Every returned date carries its SOURCE so the UI can show provenance: a date
+// resting on a file timestamp must never look like real session work.
+
+const LA_PRUNE_DIRS  = ['.git','node_modules','__pycache__','logs','dist','out','.next','.venv','venv','vendor'];
+const LA_PRUNE_FILES = ['*.log','*.db','*.db-*','*.sqlite*','*.pyc','*.lock','.quota*','*.jsonl'];
+
+/** YYYY-MM-DD in LOCAL time. toISOString() is UTC and prints tomorrow's date
+ *  after ~5pm Pacific — which it did on the first run of this research. */
+function laLocalDay(ms) {
+  const d = new Date(ms);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+/** Newest transcript in this project's Claude session folder. Claude encodes the
+ *  cwd with BOTH '/' and '_' replaced by '-'; missing the underscore is why
+ *  Todoist_Agent looked sessionless on the first pass. */
+function lastSessionDay(repo) {
+  if (!repo) return '';
+  try {
+    const dir = path.join(os.homedir(), '.claude', 'projects', repo.replace(/[\/_]/g, '-'));
+    if (!fs.existsSync(dir)) return '';
+    let newest = 0;
+    for (const f of fs.readdirSync(dir)) {
+      const st = fs.statSync(path.join(dir, f));
+      if (st.mtimeMs > newest) newest = st.mtimeMs;
+    }
+    return newest ? laLocalDay(newest) : '';
+  } catch { return ''; }
+}
+
+/** Date of the repo's most recent commit. Immune to the bulk-copy contamination. */
+function lastCommitDay(repo) {
+  if (!repo) return '';
+  try {
+    return execFileSync('git', ['-C', repo, 'log', '-1', '--format=%cd', '--date=format:%Y-%m-%d'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch { return ''; }
+}
+
+/** Newest genuine source file, runtime artifacts and vendored trees excluded. */
+function lastSourceDay(repo) {
+  if (!repo) return '';
+  try {
+    const args = [repo, '-type', 'f'];
+    for (const d of LA_PRUNE_DIRS)  args.push('-not', '-path', `*/${d}/*`);
+    for (const n of LA_PRUNE_FILES) args.push('-not', '-name', n);
+    args.push('-printf', '%T@\n');
+    const out = execFileSync('find', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    let newest = 0;
+    for (const line of out.split('\n')) { const v = parseFloat(line); if (v > newest) newest = v; }
+    return newest ? laLocalDay(newest * 1000) : '';
+  } catch { return ''; }
+}
+
+// Memoised per process: a page load asks for ~20 projects and each answer costs
+// a git invocation plus a filesystem walk. Without this the fallback re-ran both
+// across every repo on EVERY request — ~170ms added to a page already slow.
+const _laCache = new Map();
+/** Best available date for a project with no indexed session, plus its source. */
+function inferLastActive(repo) {
+  if (_laCache.has(repo)) return _laCache.get(repo);
+  const out = _inferLastActive(repo);
+  _laCache.set(repo, out);
+  return out;
+}
+function _inferLastActive(repo) {
+  let d = lastSessionDay(repo); if (d) return { date: d, source: 'session' };
+  d = lastCommitDay(repo);      if (d) return { date: d, source: 'repo'    };
+  d = lastSourceDay(repo);      if (d) return { date: d, source: 'file'    };
+  return { date: '', source: '' };
+}
+
 // Recent commit subjects for a repo (memoized — same list for every session in it).
 const _subsCache = {};
 function gitSubjects(repo) {
@@ -754,8 +840,17 @@ function queryProjects(range) {
       confirmed:  (fu.byProject[name] && fu.byProject[name].confirmed) || 0,
       priority:   prios[name] != null ? prios[name] : null,   // null = never ranked
       lastActive: (r && r.last) || '',
+      lastActiveSource: (r && r.last) ? 'session' : '',
     };
   });
+  // Fill blanks from project evidence. Only ever touches an EMPTY lastActive, so
+  // a real indexed session date is never overwritten by weaker evidence.
+  for (const p of projects) {
+    if (p.lastActive) continue;
+    const got = inferLastActive(NAME_TO_PATH[p.name]);
+    p.lastActive = got.date;
+    p.lastActiveSource = got.source;
+  }
   projects.sort((a, b2) => (a.lastActive < b2.lastActive ? 1 : -1));   // active first, 0-session last
   return { projects, appVersion: gitTag(known['Portfolio']), filtered, from: range.from || '', to: range.to || '' };
 }
