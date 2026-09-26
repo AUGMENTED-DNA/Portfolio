@@ -15,7 +15,8 @@ This code is **paper-trading / simulation only.** As shipped it:
   broker (`agent/paper_broker.py`).
 
 Turning any of this into live trading is an explicit operator decision, not a
-default, and is intentionally not wired here.
+default, and is intentionally not wired here. Before ANY real funds, every box in
+[`GO_LIVE_CHECKLIST.md`](./GO_LIVE_CHECKLIST.md) must be checked by a human.
 
 ## What was built vs. what was intentionally NOT built
 
