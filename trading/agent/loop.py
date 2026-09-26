@@ -40,10 +40,12 @@ def hold_on_escalation(snapshot: StateSnapshot, decision: Decision) -> Decision:
 @dataclass
 class StepResult:
     ts: float
-    decision: Decision
+    decision: Decision            # final decision (after any escalation hook)
     escalated: bool
     acted: bool
     detail: str
+    mid: float = 0.0              # mid at this block, for post-hoc grading
+    raw_decision: Decision | None = None   # engine's original judgement (pre-hook)
 
 
 def should_escalate(d: Decision) -> bool:
@@ -61,21 +63,25 @@ def step(
     brain_hook: Optional[BrainHook] = None,
 ) -> StepResult:
     """One block of the loop, paper mode. Returns what happened."""
-    decision = engine.decide(snapshot)
+    raw = engine.decide(snapshot)
+    decision = raw
 
     escalated = should_escalate(decision)
     if escalated:
         hook = brain_hook or hold_on_escalation
         decision = hook(snapshot, decision)
 
+    def _result(acted: bool, detail: str) -> StepResult:
+        return StepResult(snapshot.ts, decision, escalated, acted, detail,
+                          mid=snapshot.mid, raw_decision=raw)
+
     intent = decide_order(decision, bankroll=bankroll, price=snapshot.mid)
     if intent is None:
-        return StepResult(snapshot.ts, decision, escalated, False, "no trade (gate/size)")
+        return _result(False, "no trade (gate/size)")
 
     rd = risk.check(account, ProposedOrder(side=intent.side, size=intent.size))
     if not rd.allowed:
-        return StepResult(snapshot.ts, decision, escalated, False, f"risk blocked: {rd.reason}")
+        return _result(False, f"risk blocked: {rd.reason}")
 
     broker.market_order(intent.side, intent.size, snapshot.mid, snapshot.ts)
-    return StepResult(snapshot.ts, decision, escalated, True,
-                      f"{intent.side} {intent.size:.6f} @ {snapshot.mid} ({intent.reason})")
+    return _result(True, f"{intent.side} {intent.size:.6f} @ {snapshot.mid} ({intent.reason})")

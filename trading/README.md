@@ -85,6 +85,12 @@ Recorded-book JSON format (one row per block):
 [{"ts": 1.0, "bids": [[99.0, 2.0]], "asks": [[101.0, 1.0]]}]
 ```
 
+The backtest also prints the **nightly review**: it forward-grades each block's
+engine judgement and reports Brier score + hit-rate (`agent/review.py`). This is
+evaluation-only — it never feeds back into live decisions and never auto-ships a
+schema change (that stays human-approved). It's the spec's self-improvement loop,
+running offline.
+
 ## The 6-phase plan (from the spec)
 
 1. **Spec** — `BUILD_INSTRUCTIONS.md` (done).

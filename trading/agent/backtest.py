@@ -15,19 +15,20 @@ import sys
 from .data_feed import ReplayFeed, SyntheticFeed
 from .decision import StubDecisionEngine
 from .paper_broker import PaperBroker
+from .review import records_from_log, run_review
 from .risk import RiskEngine, RiskLimits
 from .runner import run_session
 
 
 def run(n: int = 300) -> dict:
-    return run_with_feed(SyntheticFeed(n=n))
+    return run_session_with_feed(SyntheticFeed(n=n)).summary()
 
 
-def run_with_feed(feed) -> dict:
+def run_session_with_feed(feed):
     engine = StubDecisionEngine()
     risk = RiskEngine(RiskLimits(max_position=5.0))
     broker = PaperBroker(cash=10_000.0)
-    return run_session(feed, engine, risk, broker, start_equity=10_000.0).summary()
+    return run_session(feed, engine, risk, broker, start_equity=10_000.0, keep_log=True)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -39,10 +40,17 @@ def main(argv: list[str] | None = None) -> None:
     else:
         feed = SyntheticFeed()
         label = "synthetic"
-    result = run_with_feed(feed)
+
+    session = run_session_with_feed(feed)
     print(f"Paper backtest ({label}; StubDecisionEngine — NO EDGE, plumbing check only):")
-    for k, v in result.items():
+    for k, v in session.summary().items():
         print(f"  {k:16} {v}")
+
+    # Overnight-style review: grade the engine's calibration over this session.
+    review = run_review(records_from_log(session.log))
+    print("\nNightly review (calibration — MEASURES ONLY, no auto-ship):")
+    for k in ("graded", "horizon", "brier", "hit_rate"):
+        print(f"  {k:16} {review[k]}")
     print("\nNote: this is a reproducible plumbing test, not a strategy result.")
 
 
