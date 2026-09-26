@@ -95,6 +95,22 @@ evaluation-only — it never feeds back into live decisions and never auto-ships
 schema change (that stays human-approved). It's the spec's self-improvement loop,
 running offline.
 
+## Strategies
+
+Named agents live under `strategies/<name>/` and configure the shared framework;
+the framework in `agent/` stays strategy-agnostic. The first one is **Reflex**:
+
+```bash
+cd trading
+python -m strategies.reflex.run                  # synthetic feed, paper
+python -m strategies.reflex.run --replay books.json
+```
+
+Reflex currently runs the no-edge stub — it's the framework in a named,
+configurable home, not a validated strategy. See
+[`strategies/reflex/README.md`](./strategies/reflex/README.md). Add another
+strategy by adding a sibling folder.
+
 ## The 6-phase plan (from the spec)
 
 1. **Spec** — `BUILD_INSTRUCTIONS.md` (done).
