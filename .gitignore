@@ -1,5 +1,12 @@
 node_modules/
-.claude/
+# Local Claude settings stay ignored, but keep the committed scroll-craft skill
+# (a parent dir can't be re-included, so ignore .claude/'s contents and carve out
+# just this skill subtree).
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/scroll-craft/
+!.claude/skills/scroll-craft/**
 data.json
 .browser-sessions/
 about.html
