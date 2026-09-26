@@ -53,7 +53,10 @@ default, and is intentionally not wired here.
 - **The decision engine is a placeholder, not an edge.** `StubDecisionEngine`
   makes toy decisions from order-book features. It is not a strategy and must not
   be treated as one. A real decision engine — whether "Jev" or anything else —
-  must be supplied and validated before this is more than plumbing.
+  must be supplied and validated before this is more than plumbing. See
+  [`DECISION_ENGINE_DESIGN.md`](./DECISION_ENGINE_DESIGN.md) for how to build and
+  validate one (features, confidence calibration, walk-forward validation, the
+  acceptance bar, and the rollout ladder to any live venue).
 
 ## Adapters (data feed & broker)
 
