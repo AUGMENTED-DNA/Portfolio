@@ -55,12 +55,34 @@ default, and is intentionally not wired here.
   be treated as one. A real decision engine — whether "Jev" or anything else —
   must be supplied and validated before this is more than plumbing.
 
+## Adapters (data feed & broker)
+
+The loop talks to the outside world only through two interfaces, so it can't tell
+where data comes from or where orders go:
+
+- **`agent/data_feed.py`** — `DataFeed` protocol. `SyntheticFeed` (deterministic,
+  for tests) and `ReplayFeed` (replays recorded books from a local JSON file,
+  enforcing non-decreasing timestamps). A live read-only feed would implement the
+  same protocol.
+- **`agent/broker.py`** — `Broker` protocol. `PaperBroker` (simulated fills) is
+  the default. `TestnetBroker` is an **unwired placeholder**: a testnet moves only
+  fake funds but still needs an endpoint + credentials, so it refuses to run until
+  a verified adapter is supplied. **There is no mainnet/real-money broker here.**
+- **`agent/runner.py`** — `run_session()` drives any feed through the loop into any
+  broker, keeping the causal bookkeeping honest.
+
 ## Run it (offline, paper)
 
 ```bash
 cd trading
-python -m agent.backtest          # replay the sample candles through the policy
-python -m pytest tests -q         # run the unit tests
+python -m agent.backtest                    # synthetic feed through the policy
+python -m agent.backtest --replay books.json # replay recorded order books (JSON)
+python -m pytest tests -q                    # run the unit tests (33)
+```
+
+Recorded-book JSON format (one row per block):
+```json
+[{"ts": 1.0, "bids": [[99.0, 2.0]], "asks": [[101.0, 1.0]]}]
 ```
 
 ## The 6-phase plan (from the spec)
