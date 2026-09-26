@@ -1,0 +1,2 @@
+# The agent scaffold is pure standard-library Python (3.10+). Only tests need a dep.
+pytest>=8.0

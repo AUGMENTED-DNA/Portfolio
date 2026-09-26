@@ -1,0 +1,15 @@
+# Never commit credentials or live data
+.env
+*.key
+*.pem
+secrets/
+keys/
+data/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
