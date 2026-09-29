@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Pushover titles start with the building Claude session's current title (Dane, 2026-09-29);
+# no session on record, so the project name is used. Helper: ~/.local/bin/pai-session-title
+PAI_SESSION_ID=""; PAI_FALLBACK="Portfolio"
 # ─────────────────────────────────────────────────────────────────────────────
 # Portfolio Server Watchdog (port 4040) — health-check auto-restart  [v1.0]
 #
@@ -93,7 +96,7 @@ notify() {
   fi
   resp=$(curl -s --max-time 10 \
     --form-string "token=$API_TOKEN" --form-string "user=$USER_KEY" \
-    --form-string "title=$title" --form-string "message=$msg" \
+    --form-string "title=$(/home/dmcneill/.local/bin/pai-session-title "$PAI_SESSION_ID" "$PAI_FALLBACK")$title" --form-string "message=$msg" \
     --form-string "priority=$prio" \
     https://api.pushover.net/1/messages.json 2>/dev/null)
   if printf '%s' "$resp" | grep -q '"status":1'; then
