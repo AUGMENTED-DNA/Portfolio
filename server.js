@@ -41,6 +41,7 @@ const NAME_TO_PATH = {
   'MissionControl':    '/home/dmcneill/Projects/MissionControl',
   'TheVault':          '/home/dmcneill/Projects/TheVault',
   'SessionRelauncher': '/home/dmcneill/Projects/SessionRelauncher',
+  'Roast-Room':        '/home/dmcneill/Projects/Roast-Room',
 };
 
 // ─── Session-records work history ──────────────────────────────────────────────
