@@ -1340,7 +1340,7 @@ async function showProjects() {
   // session admitted was unfinished with work the assistant silently claimed
   // done, and hid the only state that settles the question: whether YOU closed
   // it. A number the assistant can move is not evidence of resolution.
-  [['#',            'num', 'Priority position from the Prioritise screen — 1 is highest, — means unranked'],
+  [['#',            'num', 'Row number. Ranked projects (Prioritise screen) come first, in rank order'],
    ['Project',      '',    'Project name as registered in your PAI project registry'],
    ['Version',      'ver', 'Latest git tag found in the project repository'],
    ['Sessions',     'num', 'Number of recorded Claude sessions in the selected date range'],
@@ -1355,7 +1355,7 @@ async function showProjects() {
   const tb = document.createElement('tbody');
   // Ranked projects first in rank order, then everything unranked by recency —
   // the same rule the Prioritise screen and the left nav use, so all three agree.
-  prioOrder(data.projects).forEach(p => {
+  prioOrder(data.projects).forEach((p, i) => {
     const tr = document.createElement('tr'); tr.className = 'clickable';
     // Amber marks what needs YOUR action, so it belongs on Awaiting You rather
     // than on Open — Open is my backlog, Awaiting You is yours.
@@ -1369,7 +1369,11 @@ async function showProjects() {
       (p.unknown ? ' · ' + p.unknown + ' more had no readable verdict' : '');
     const confirmed = mkCell(p.confirmed || 0, 'num');
     confirmed.title = (p.confirmed || 0) + ' item' + (p.confirmed === 1 ? '' : 's') + ' you closed as done';
-    tr.append(mkCell(p.priority != null ? p.priority : '—', 'num'),
+    // v4.8: a plain row count. It used to show the saved rank, so with no ranks
+    // saved every row read "—". The rank still sets the order and its tooltip.
+    const rowNum = mkCell(i + 1, 'num');
+    if (p.priority != null) rowNum.title = 'Rank ' + p.priority + ' on the Prioritise screen';
+    tr.append(rowNum,
               mkCell(p.name), mkCell(p.version || '—', 'ver'),
               mkCell(p.sessions, 'num'), awaiting, open, confirmed,
               mkCell((p.lastActive || '—') +
