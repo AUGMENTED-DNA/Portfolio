@@ -1,0 +1,6 @@
+# Service layer (runs anywhere, incl. this sandbox with the mock backend)
+fastapi>=0.110
+uvicorn>=0.29
+# pydantic comes with fastapi; httpx + pytest are for the tests
+httpx>=0.27
+pytest>=8.0
