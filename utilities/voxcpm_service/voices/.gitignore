@@ -1,5 +1,0 @@
-# keep reference audio and configured voices out of git (but track this folder)
-*.wav
-*.flac
-*.mp3
-!README.md
