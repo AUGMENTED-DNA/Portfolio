@@ -43,6 +43,7 @@ const NAME_TO_PATH = {
   'SessionRelauncher': '/home/dmcneill/Projects/SessionRelauncher',
   'Roast-Room':        '/home/dmcneill/Projects/Roast-Room',
   'HarnessLab':        '/home/dmcneill/Projects/HarnessLab',
+  'SessionBridge':     '/home/dmcneill/Projects/SessionBridge',
 };
 
 // ─── Session-records work history ──────────────────────────────────────────────
