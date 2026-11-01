@@ -124,3 +124,57 @@ CLAUDE.md would only affect that repo.)
   it's one-way (web -> terminal, no sync back) and follows the session's pushed
   git branch — so it won't carry the standalone Jarvis-U folder. The fresh
   `gh repo create` above is the clean route for Jarvis-U.
+
+---
+
+## Analysis & Suggestions (added 2026-11-01)
+
+Critique of the plan above, in priority order. Advisory — act on these in the
+desktop session.
+
+### 1. Licensing is the biggest risk (do this first)
+JarvisFM is a fork of `FatihMakes/Mark-L` under **CC BY-NC 4.0**. Reusing its
+frontend carries those terms into Jarvis-U: **non-commercial only** + **attribution
+required**, and CC-NC is a poor fit for software generally.
+- Keep attribution; add a LICENSE/NOTICE for the borrowed code.
+- Confirm non-commercial is acceptable for your intent.
+- Isolate the borrowed frontend in its own directory so provenance is clean.
+- If you ever want commercial latitude, plan a cleaner-licensed frontend base.
+
+### 2. Define the backend contract BEFORE porting the frontend
+Porting the frontend "as-is" before the new backend exists means reworking it
+twice. Sequence instead: define the **frontend<->backend contract first**
+(WebSocket for streaming voice + REST/JSON for the rest), then scaffold the
+backend, then port the frontend against that contract. JarvisFM is Python, so a
+**FastAPI** gateway + modular tool/skill services + auth + task/state store +
+event bus is a natural shape.
+
+### 3. Specify what "Cagny" actually is (not a config afterthought)
+Cognee organizes data into **datasets/namespaces** with their own vector + graph
+stores. Pin down whether Cagny is: (a) a named Cognee dataset e.g. `jarvis_u`,
+(b) a separate Cognee instance, or (c) fully separate backing stores. Define the
+**ingestion boundary** (raw conversations? documents? derived knowledge?) and
+governance (retention, PII, a purge path). Data isolation from other sources is
+an architectural decision — make it explicit.
+
+### 4. Decide Jarvis-U's relationship to the existing PAI ecosystem
+You already run PAI, MissionControl, CCBridge, Hub-Bridge, Utilities. Decide up
+front whether Jarvis-U is standalone or registers into that ecosystem (surfaced
+in MissionControl, sharing CCBridge, etc.) to avoid rebuilding infra you have.
+
+### 5. Turn "each project = its own repo" into a real template
+Standardize a **GitHub template repo**: README, LICENSE, `.gitignore`,
+`.env.example`, CI. Then every new project starts uniform instead of
+hand-assembled.
+
+### 6. Secrets/config discipline from the first commit
+Cognee endpoint + model API keys (incl. the free-model watch / Gemini 3.1 Flash
+Live). Use `.env` + `.env.example`, never commit keys, choose a secrets store
+before the first integration commit.
+
+### 7. Suggested resequencing of "Next steps"
+Integrate memory EARLY (it shapes the data model), not last:
+1. Backend architecture + frontend/backend contract.
+2. Backend skeleton.
+3. Cognee/Cagny dataset wired as a first-class memory service.
+4. Port the JarvisFM frontend against the finalized contract.
